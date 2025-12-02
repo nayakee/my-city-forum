@@ -1,0 +1,28 @@
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import NullPool, func, text
+from sqlalchemy.ext.asyncio import (
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from app.config import settings
+
+engine = create_async_engine(settings.get_db_url)
+
+engine_null_pool = create_async_engine(settings.get_db_url, poolclass=NullPool)
+
+
+async_session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
+async_session_maker_null_pool = async_sessionmaker(
+    bind=engine_null_pool, expire_on_commit=False
+)
+
+
+class Base(DeclarativeBase):
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
