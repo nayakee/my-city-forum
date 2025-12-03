@@ -1,11 +1,12 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Float, ForeignKey
+from sqlalchemy import String, Integer, ForeignKey, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.database import Base
 
 if TYPE_CHECKING:
     from app.models.roles import RoleModel
+    from app.models.communities import CommunityModel
 
 
 class UserModel(Base):
@@ -17,3 +18,10 @@ class UserModel(Base):
 
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
     role: Mapped["RoleModel"] = relationship(back_populates="users")
+
+    reputation: Mapped[int] = mapped_column(default=0)
+    posts_count: Mapped[int] = mapped_column(default=0)
+    comments_count: Mapped[int] = mapped_column(default=0)
+    
+    communities: Mapped[list["CommunityModel"]] = relationship(secondary="user_communities", back_populates="users")
+ 
