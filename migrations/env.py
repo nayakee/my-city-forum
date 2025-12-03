@@ -10,7 +10,7 @@ from app.database.database import Base
 from app.config import settings
 
 from app.models.users import UserModel
-from app.models.user_communities import user_communities
+from app.models.user_communities import UserCommunityModel
 from app.models.posts import PostModel
 from app.models.comments import CommentModel
 from app.models.communities import CommunityModel

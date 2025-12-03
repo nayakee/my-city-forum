@@ -14,8 +14,8 @@ class PostModel(Base):
     __tablename__ = "posts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped [int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    theme_id: Mapped [int] = mapped_column(ForeignKey("theme.id"), nullable = False)
+    user_id: Mapped [int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    theme_id: Mapped [int] = mapped_column(ForeignKey("themes.id"), nullable = False)
     community_id: Mapped[int] = mapped_column(ForeignKey("communities.id"), nullable=True)
 
     header: Mapped[str] = mapped_column(String(255), unique=False, nullable=False)
