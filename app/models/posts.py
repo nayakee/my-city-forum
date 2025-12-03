@@ -26,5 +26,5 @@ class PostModel(Base):
 
     user: Mapped["UserModel"] = relationship(back_populates="posts")
     theme: Mapped["ThemeModel"] = relationship(back_populates="posts")
-    comments: Mapped[list["CommentModel"]] = relationship(back_populates="posts", cascade="all, delete-orphan")
+    comments: Mapped[list["CommentModel"]] = relationship(back_populates="post", cascade="all, delete-orphan")
     community: Mapped["CommunityModel"] = relationship(back_populates="posts")
