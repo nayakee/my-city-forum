@@ -1,10 +1,16 @@
-from sqlalchemy import Table, Column, Integer, ForeignKey, DateTime
-from sqlalchemy.sql import func
+from sqlalchemy import Integer, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.database import Base
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.users import UserModel
+    from app.models.communities import CommunityModel
  
-user_communities = Table(
-    'user_communities',
-    Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
-    Column('community_id', Integer, ForeignKey('communities.id'), primary_key=True),
-)
+class UserCommunityModel(Base):
+    __tablename__ = "user_communities"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    community_id: Mapped[int] = mapped_column(ForeignKey("communities.id"), primary_key=True)
+
+    user: Mapped["UserModel"] = relationship(back_populates="community_associations")
+    community: Mapped["CommunityModel"] = relationship(back_populates="user_associations")
