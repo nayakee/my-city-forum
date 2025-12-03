@@ -9,10 +9,16 @@ from alembic import context
 from app.database.database import Base
 from app.config import settings
 
+from app.models.users import UserModel
+from app.models.user_communities import user_communities
+from app.models.posts import PostModel
+from app.models.comments import CommentModel
+from app.models.communities import CommunityModel
+from app.models.roles import RoleModel
+from app.models.themes import ThemeModel
+
 # TODO Добавить сюда импорт созданных моделей
 # Пример:
-from app.models.users import UserModel
-from app.models.roles import RoleModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
