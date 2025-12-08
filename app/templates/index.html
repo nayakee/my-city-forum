@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой Город - Форум</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Шапка -->
+    <header class="header">
+        <div class="header-container">
+            <!-- Логотип и навигация -->
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                    <h1>Мой Город</h1>
+                </div>
+                <nav class="main-nav">
+                    <a href="#" class="nav-link active"><i class="fas fa-home"></i> Главная</a>
+                    <a href="#" class="nav-link"><i class="fas fa-comments"></i> Темы</a>
+                    <a href="#" class="nav-link"><i class="fas fa-users"></i> Сообщества</a>
+                </nav>
+            </div>
+
+            <!-- Личный кабинет / Авторизация -->
+            <div class="auth-section" id="auth-section">
+                <!-- Показываем если не авторизован -->
+                <div class="auth-buttons" id="guest-buttons">
+                    <a href="/auth?action=login" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Вход</a>
+                    <a href="/auth?action=register" class="btn btn-primary"><i class="fas fa-user-plus"></i> Регистрация</a>
+                </div>
+                <!-- Показываем если авторизован -->
+                <div class="user-menu" id="user-menu" style="display: none;">
+                    <div class="user-info">
+                        <img src="" alt="Аватар" class="avatar" id="user-avatar">
+                        <span class="username" id="username">Гость</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item"><i class="fas fa-user"></i> Профиль</a>
+                        <a href="#" class="dropdown-item"><i class="fas fa-edit"></i> Мои посты</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Выйти</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="main-content container">
+        <!-- Левая часть - Лента постов и создание поста -->
+        <div class="content-left">
+            <!-- Форма создания поста (только для авторизованных) -->
+            <div class="create-post-card" id="create-post-card" style="display: none;">
+                <h3><i class="fas fa-plus-circle"></i> Создать новый пост</h3>
+                <form id="create-post-form">
+                    <div class="form-group">
+                        <input type="text" id="post-title" placeholder="Заголовок поста" required maxlength="200">
+                    </div>
+                    
+                    <div class="form-group">
+                        <textarea id="post-content" placeholder="Содержание поста..." rows="4" required maxlength="5000"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="post-topic">Выберите тему:</label>
+                        <select id="post-topic" required>
+                            <option value="">-- Выберите тему --</option>
+                            <!-- Темы будут загружаться через API -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="text" id="post-tags" placeholder="Теги (через запятую, например: дороги,ремонт,город)">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="cancel-post">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Опубликовать</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Кнопка создания поста (для гостей и авторизованных) -->
+            <div class="create-post-button">
+                <button class="btn btn-primary btn-block" id="show-create-post">
+                    <i class="fas fa-pen"></i> Создать пост
+                </button>
+                <div class="guest-notice" id="guest-notice">
+                    <p><i class="fas fa-info-circle"></i> Чтобы создавать посты, пожалуйста, <a href="/auth?action=login">войдите</a> или <a href="/auth?action=register">зарегистрируйтесь</a>.</p>
+                </div>
+            </div>
+
+            <!-- Сортировка и фильтры -->
+            <div class="posts-header">
+                <h2><i class="fas fa-stream"></i> Лента постов</h2>
+                <div class="sort-controls">
+                    <div class="sort-by">
+                        <label>Сортировать:</label>
+                        <select id="sort-select">
+                            <option value="new">Сначала новые</option>
+                            <option value="popular">Сначала популярные</option>
+                            <option value="discussed">Сначала обсуждаемые</option>
+                        </select>
+                    </div>
+                    <div class="filter-topic">
+                        <label>Тема:</label>
+                        <select id="topic-filter">
+                            <option value="all">Все темы</option>
+                            <!-- Темы будут загружаться через API -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Лента постов -->
+            <div class="posts-feed" id="posts-feed">
+                <!-- Посты будут загружаться через API -->
+                <div class="loading-posts">
+                    <i class="fas fa-spinner fa-spin"></i> Загрузка постов...
+                </div>
+            </div>
+            
+            <!-- Пагинация -->
+            <div class="pagination" id="pagination" style="display: none;">
+                <button class="btn btn-outline" id="prev-page"><i class="fas fa-chevron-left"></i> Назад</button>
+                <span class="page-info" id="page-info">Страница 1</span>
+                <button class="btn btn-outline" id="next-page">Вперед <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Правая часть - Статистика и сообщества -->
+        <aside class="sidebar">
+            <!-- Статистика форума -->
+            <div class="stats-card">
+                <h3><i class="fas fa-chart-line"></i> Статистика форума</h3>
+                <div class="stats-grid" id="forum-stats">
+                    <!-- Статистика будет загружаться через API -->
+                    <div class="loading-stats">
+                        <i class="fas fa-spinner fa-spin"></i> Загрузка статистики...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Доступные темы -->
+            <div class="topics-card">
+                <h3><i class="fas fa-tags"></i> Темы форума</h3>
+                <div class="topics-list" id="topics-list">
+                    <!-- Темы будут загружаться через API -->
+                    <div class="loading-topics">
+                        <i class="fas fa-spinner fa-spin"></i> Загрузка тем...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Правила форума -->
+            <div class="rules-card">
+                <h3><i class="fas fa-info-circle"></i> Правила форума</h3>
+                <ul class="rules-list">
+                    <li><i class="fas fa-check-circle"></i> Уважайте других участников</li>
+                    <li><i class="fas fa-check-circle"></i> Пишите по теме обсуждения</li>
+                    <li><i class="fas fa-check-circle"></i> Не публикуйте спам</li>
+                    <li><i class="fas fa-check-circle"></i> Соблюдайте законодательство</li>
+                </ul>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Подвал -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="logo">
+                        <i class="fas fa-city"></i>
+                        <h2>Мой Город</h2>
+                    </div>
+                    <p>Форум для обсуждения городских вопросов</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Навигация</h3>
+                    <a href="/">Главная</a>
+                    <a href="/auth">Вход/Регистрация</a>
+                    <a href="#">Темы</a>
+                    <a href="#">Сообщества</a>
+                </div>
+                <div class="footer-section">
+                    <h3>Помощь</h3>
+                    <a href="#">Правила</a>
+                    <a href="#">FAQ</a>
+                    <a href="#">Контакты</a>
+                </div>
+                <div class="footer-section">
+                    <h3>Разработка</h3>
+                    <p>Форум "Мой Город"</p>
+                    <p>Версия 1.0</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2023 Форум "Мой Город". Для жителей города.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Уведомления -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Скрипты -->
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
