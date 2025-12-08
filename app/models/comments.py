@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Float, ForeignKey
+from sqlalchemy import String, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.database import Base
 
@@ -17,8 +17,8 @@ class CommentModel(Base):
 
     body: Mapped[str] = mapped_column(String(1500), unique=False, nullable=False)
 
-    likes: Mapped[int] = mapped_column(default=0)
-    dislikes: Mapped[int] = mapped_column(default=0)
+    likes: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
+    dislikes: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
 
     user: Mapped["UserModel"] = relationship(back_populates="comments")
     posts: Mapped["PostModel"] = relationship(back_populates="comments")

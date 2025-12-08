@@ -19,9 +19,9 @@ class UserModel(Base):
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
     role: Mapped["RoleModel"] = relationship(back_populates="users")
 
-    reputation: Mapped[int] = mapped_column(default=0)
-    posts_count: Mapped[int] = mapped_column(default=0)
-    comments_count: Mapped[int] = mapped_column(default=0)
+    reputation: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
+    posts_count: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
+    comments_count: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
     
     communities: Mapped[list["CommunityModel"]] = relationship(secondary="user_communities", back_populates="users")
  

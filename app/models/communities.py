@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Float, ForeignKey, Integer
+from sqlalchemy import String, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.database import Base
 
@@ -15,8 +15,8 @@ class CommunityModel(Base):
     name: Mapped[str] = mapped_column(String(255), unique=False, nullable=False)
     description: Mapped[str] = mapped_column(String(255), unique=False, nullable=False)
 
-    posts_count: Mapped[int] = mapped_column(Integer, default=0)
-    members_count: Mapped[int] = mapped_column(Integer, default=0)
+    posts_count: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
+    members_count: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
 
     users: Mapped[list["UserModel"]] = relationship(secondary="user_communities", back_populates="communities")
 
