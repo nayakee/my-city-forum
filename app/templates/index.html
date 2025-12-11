@@ -28,7 +28,7 @@
                     <i class="fas fa-home"></i>
                     Главная
                 </a>
-                <a href="#" class="nav-link">
+                <a href="/web/communities" class="nav-link"> <!-- ОБНОВЛЕННАЯ ССЫЛКА -->
                     <i class="fas fa-users"></i>
                     Сообщества
                 </a>
@@ -37,11 +37,11 @@
             <!-- Авторизация -->
             <div class="auth-section" id="auth-section">
                 <div class="auth-buttons" id="guest-buttons">
-                    <a href="/auth?action=login" class="btn btn-outline">
+                    <a href="/web/auth" class="btn btn-outline">
                         <i class="fas fa-sign-in-alt"></i>
                         Вход
                     </a>
-                    <a href="/auth?action=register" class="btn btn-primary">
+                    <a href="/web/auth" class="btn btn-primary">
                         <i class="fas fa-user-plus"></i>
                         Регистрация
                     </a>
@@ -309,9 +309,9 @@
                 <div class="footer-section">
                     <h3>Навигация</h3>
                     <div class="footer-links">
-                        <a href="/">Главная</a>
-                        <a href="/auth">Вход/Регистрация</a>
-                        <a href="#">Сообщества</a>
+                        <a href="/web">Главная</a>
+                        <a href="/web/auth">Вход/Регистрация</a>
+                        <a href="/web/communities">Сообщества</a> <!-- ОБНОВЛЕННАЯ ССЫЛКА -->
                         <a href="#">Правила</a>
                     </div>
                 </div>
@@ -404,7 +404,7 @@
             const guestNotice = document.querySelector('#guest-notice');
             if (guestNotice) {
                 alert('Для создания поста нужно войти в систему');
-                window.location.href = '/auth';
+                window.location.href = '/web/auth';
             } else {
                 // Логика для авторизованного пользователя
                 console.log('Открытие формы создания поста');

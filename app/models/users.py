@@ -7,6 +7,7 @@ from app.database.database import Base
 if TYPE_CHECKING:
     from app.models.roles import RoleModel
     from app.models.communities import CommunityModel
+    from app.models.user_communities import UserCommunityModel
 
 
 class UserModel(Base):
@@ -24,4 +25,8 @@ class UserModel(Base):
     comments_count: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
     
     communities: Mapped[list["CommunityModel"]] = relationship(secondary="user_communities", back_populates="users")
+
+    community_associations: Mapped[list["UserCommunityModel"]] = relationship(
+        back_populates="user"
+    )
  

@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой Город - Сообщества</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Стили для страницы сообществ */
+        .communities-page {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f8fafc 0%, #f0f9ff 100%);
+            position: relative;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .communities-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .communities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .community-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .community-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        }
+        
+        .community-header {
+            padding: 2rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #e8f5e9 100%);
+            position: relative;
+            text-align: center;
+        }
+        
+        .community-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #2e7d32;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border: 3px solid #fff;
+        }
+        
+        .community-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+        }
+        
+        .community-description {
+            color: #64748b;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .community-stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2e7d32;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        
+        .community-content {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .community-topics {
+            margin-bottom: 1.5rem;
+        }
+        
+        .community-topics h4 {
+            font-size: 1rem;
+            color: #475569;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .topic-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .topic-tag {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .community-actions {
+            margin-top: auto;
+        }
+        
+        .join-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+        
+        .join-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(46, 125, 50, 0.3);
+        }
+        
+        .join-btn.joined {
+            background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+        }
+        
+        .no-communities {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        .no-communities-icon {
+            font-size: 4rem;
+            color: #cbd5e1;
+            margin-bottom: 1.5rem;
+        }
+        
+        .no-communities h2 {
+            color: #475569;
+            margin-bottom: 1rem;
+        }
+        
+        .no-communities p {
+            color: #94a3b8;
+            max-width: 500px;
+            margin: 0 auto 2rem;
+        }
+        
+        /* Фильтры сообществ - оригинальный стиль как на главной */
+        .theme-filters {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .theme-filter {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .theme-filter:hover {
+            background: #e8f5e9;
+            color: #2e7d32;
+            transform: translateY(-1px);
+        }
+        
+        .theme-filter.active {
+            background: #2e7d32;
+            color: white;
+        }
+        
+        .search-box {
+            flex-grow: 1;
+            max-width: 400px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 0.875rem 1.25rem 0.875rem 3rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #2e7d32;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+        
+        .admin-notice {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 2px solid #fbbf24;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .admin-notice-icon {
+            font-size: 1.5rem;
+            color: #d97706;
+        }
+        
+        .admin-notice-content h3 {
+            color: #92400e;
+            margin-bottom: 0.5rem;
+        }
+        
+        .admin-notice-content p {
+            color: #78350f;
+            margin: 0;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .communities-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .communities-container {
+                padding: 1.5rem 1rem;
+            }
+            
+            .theme-filters {
+                flex-direction: column;
+            }
+            
+            .search-box {
+                max-width: 100%;
+                order: -1;
+                margin-bottom: 1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .community-header {
+                padding: 1.5rem;
+            }
+            
+            .community-icon {
+                width: 70px;
+                height: 70px;
+                font-size: 1.75rem;
+            }
+            
+            .community-title {
+                font-size: 1.25rem;
+            }
+            
+            .community-stats {
+                padding: 1rem;
+            }
+            
+            .stat-value {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Шапка (оригинальная как на главной) -->
+    <header class="header">
+        <div class="container header-container">
+            <!-- Логотип -->
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Мой Город</h1>
+                    <span>Форум жителей</span>
+                </div>
+            </div>
+
+            <!-- Навигация -->
+            <nav class="main-nav">
+                <a href="/web/" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    Главная
+                </a>
+                <a href="/web/communities" class="nav-link active">
+                    <i class="fas fa-users"></i>
+                    Сообщества
+                </a>
+            </nav>
+
+            <!-- Авторизация -->
+            <div class="auth-section" id="auth-section">
+                <div class="auth-buttons" id="guest-buttons">
+                    <a href="/web/auth" class="btn btn-outline">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Вход
+                    </a>
+                    <a href="/web/auth" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i>
+                        Регистрация
+                    </a>
+                </div>
+                
+                <div class="user-menu" id="user-menu" style="display: none;">
+                    <div class="d-flex align-center gap-2">
+                        <div class="post-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span id="username">Гость</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="communities-page">
+        <div class="container communities-container">
+            <!-- Уведомление об административных правах -->
+            <div class="admin-notice">
+                <div class="admin-notice-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="admin-notice-content">
+                    <h3>Создание сообществ</h3>
+                    <p>Только администраторы могут создавать новые сообщества. Если у вас есть идея для нового сообщества, свяжитесь с администрацией форума.</p>
+                </div>
+            </div>
+
+            <!-- Фильтры и поиск (оригинальный стиль как на главной) -->
+            <div class="theme-filters">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Поиск сообществ...">
+                </div>
+                
+                <button class="theme-filter active" data-filter="all">
+                    <i class="fas fa-layer-group"></i> Все
+                </button>
+                <button class="theme-filter" data-filter="popular">
+                    <i class="fas fa-fire"></i> Популярные
+                </button>
+                <button class="theme-filter" data-filter="new">
+                    <i class="fas fa-star"></i> Новые
+                </button>
+                <button class="theme-filter" data-filter="news">
+                    <i class="fas fa-newspaper"></i> Новости
+                </button>
+                <button class="theme-filter" data-filter="realestate">
+                    <i class="fas fa-building"></i> Недвижимость
+                </button>
+            </div>
+
+            <!-- Сетка сообществ -->
+            <div class="communities-grid" id="communities-grid">
+                <!-- Сообщество "Новости города" -->
+                <div class="community-card" data-category="news" data-members="1245" data-date="2023">
+                    <div class="community-header">
+                        <div class="community-icon">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <h3 class="community-title">Новости города</h3>
+                        <p class="community-description">Самые свежие новости, события и анонсы городской жизни</p>
+                    </div>
+                    
+                    <div class="community-stats">
+                        <div class="stat">
+                            <span class="stat-value">1,245</span>
+                            <span class="stat-label">участников</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">892</span>
+                            <span class="stat-label">постов</span>
+                        </div>
+                        <!-- УБРАН СТАТ "ОНЛАЙН" -->
+                    </div>
+                    
+                    <div class="community-content">
+                        <div class="community-topics">
+                            <h4><i class="fas fa-hashtag"></i> Популярные темы</h4>
+                            <div class="topic-tags">
+                                <span class="topic-tag">Новости</span>
+                                <span class="topic-tag">События</span>
+                                <span class="topic-tag">Анонсы</span>
+                                <span class="topic-tag">Объявления</span>
+                            </div>
+                        </div>
+                        
+                        <div class="community-actions">
+                            <button class="join-btn">
+                                <i class="fas fa-user-plus"></i>
+                                Присоединиться
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Сообщество "Недвижимость и ЖКХ" -->
+                <div class="community-card" data-category="realestate" data-members="892" data-date="2023">
+                    <div class="community-header">
+                        <div class="community-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <h3 class="community-title">Недвижимость и ЖКХ</h3>
+                        <p class="community-description">Вопросы жилищно-коммунального хозяйства, ремонты, управляющие компании</p>
+                    </div>
+                    
+                    <div class="community-stats">
+                        <div class="stat">
+                            <span class="stat-value">892</span>
+                            <span class="stat-label">участников</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">1,245</span>
+                            <span class="stat-label">постов</span>
+                        </div>
+                        <!-- УБРАН СТАТ "ОНЛАЙН" -->
+                    </div>
+                    
+                    <div class="community-content">
+                        <div class="community-topics">
+                            <h4><i class="fas fa-hashtag"></i> Популярные темы</h4>
+                            <div class="topic-tags">
+                                <span class="topic-tag">Ремонт</span>
+                                <span class="topic-tag">ЖКХ</span>
+                                <span class="topic-tag">Квартиры</span>
+                                <span class="topic-tag">УК</span>
+                            </div>
+                        </div>
+                        
+                        <div class="community-actions">
+                            <button class="join-btn">
+                                <i class="fas fa-user-plus"></i>
+                                Присоединиться
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Сообщество "Транспорт и дороги" -->
+                <div class="community-card" data-category="transport" data-members="756" data-date="2023">
+                    <div class="community-header">
+                        <div class="community-icon">
+                            <i class="fas fa-bus"></i>
+                        </div>
+                        <h3 class="community-title">Транспорт и дороги</h3>
+                        <p class="community-description">Общественный транспорт, дорожная ситуация, парковки, пробки</p>
+                    </div>
+                    
+                    <div class="community-stats">
+                        <div class="stat">
+                            <span class="stat-value">756</span>
+                            <span class="stat-label">участников</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">523</span>
+                            <span class="stat-label">постов</span>
+                        </div>
+                        <!-- УБРАН СТАТ "ОНЛАЙН" -->
+                    </div>
+                    
+                    <div class="community-content">
+                        <div class="community-topics">
+                            <h4><i class="fas fa-hashtag"></i> Популярные темы</h4>
+                            <div class="topic-tags">
+                                <span class="topic-tag">Автобусы</span>
+                                <span class="topic-tag">Дороги</span>
+                                <span class="topic-tag">Парковки</span>
+                                <span class="topic-tag">Маршруты</span>
+                            </div>
+                        </div>
+                        
+                        <div class="community-actions">
+                            <button class="join-btn joined">
+                                <i class="fas fa-check"></i>
+                                Вы в сообществе
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Сообщество "Экология и благоустройство" -->
+                <div class="community-card" data-category="ecology" data-members="623" data-date="2023">
+                    <div class="community-header">
+                        <div class="community-icon">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <h3 class="community-title">Экология и благоустройство</h3>
+                        <p class="community-description">Озеленение, чистота города, экологические инициативы, субботники</p>
+                    </div>
+                    
+                    <div class="community-stats">
+                        <div class="stat">
+                            <span class="stat-value">623</span>
+                            <span class="stat-label">участников</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">415</span>
+                            <span class="stat-label">постов</span>
+                        </div>
+                        <!-- УБРАН СТАТ "ОНЛАЙН" -->
+                    </div>
+                    
+                    <div class="community-content">
+                        <div class="community-topics">
+                            <h4><i class="fas fa-hashtag"></i> Популярные темы</h4>
+                            <div class="topic-tags">
+                                <span class="topic-tag">Озеленение</span>
+                                <span class="topic-tag">Чистота</span>
+                                <span class="topic-tag">Субботники</span>
+                                <span class="topic-tag">Экоинициативы</span>
+                            </div>
+                        </div>
+                        
+                        <div class="community-actions">
+                            <button class="join-btn">
+                                <i class="fas fa-user-plus"></i>
+                                Присоединиться
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Сообщество "Культура и досуг" -->
+                <div class="community-card" data-category="culture" data-members="487" data-date="2024">
+                    <div class="community-header">
+                        <div class="community-icon">
+                            <i class="fas fa-theater-masks"></i>
+                        </div>
+                        <h3 class="community-title">Культура и досуг</h3>
+                        <p class="community-description">Культурные мероприятия, выставки, концерты, кино, отдых в городе</p>
+                    </div>
+                    
+                    <div class="community-stats">
+                        <div class="stat">
+                            <span class="stat-value">487</span>
+                            <span class="stat-label">участников</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">312</span>
+                            <span class="stat-label">постов</span>
+                        </div>
+                        <!-- УБРАН СТАТ "ОНЛАЙН" -->
+                    </div>
+                    
+                    <div class="community-content">
+                        <div class="community-topics">
+                            <h4><i class="fas fa-hashtag"></i> Популярные темы</h4>
+                            <div class="topic-tags">
+                                <span class="topic-tag">Концерты</span>
+                                <span class="topic-tag">Выставки</span>
+                                <span class="topic-tag">Кино</span>
+                                <span class="topic-tag">Отдых</span>
+                            </div>
+                        </div>
+                        
+                        <div class="community-actions">
+                            <button class="join-btn">
+                                <i class="fas fa-user-plus"></i>
+                                Присоединиться
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Сообщество "Спорт и здоровье" -->
+                <div class="community-card" data-category="sports" data-members="542" data-date="2024">
+                    <div class="community-header">
+                        <div class="community-icon">
+                            <i class="fas fa-dumbbell"></i>
+                        </div>
+                        <h3 class="community-title">Спорт и здоровье</h3>
+                        <p class="community-description">Спортивные мероприятия, секции, здоровый образ жизни, медцентры</p>
+                    </div>
+                    
+                    <div class="community-stats">
+                        <div class="stat">
+                            <span class="stat-value">542</span>
+                            <span class="stat-label">участников</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">389</span>
+                            <span class="stat-label">постов</span>
+                        </div>
+                        <!-- УБРАН СТАТ "ОНЛАЙН" -->
+                    </div>
+                    
+                    <div class="community-content">
+                        <div class="community-topics">
+                            <h4><i class="fas fa-hashtag"></i> Популярные темы</h4>
+                            <div class="topic-tags">
+                                <span class="topic-tag">Спортзалы</span>
+                                <span class="topic-tag">Соревнования</span>
+                                <span class="topic-tag">ЗОЖ</span>
+                                <span class="topic-tag">Поликлиники</span>
+                            </div>
+                        </div>
+                        
+                        <div class="community-actions">
+                            <button class="join-btn">
+                                <i class="fas fa-user-plus"></i>
+                                Присоединиться
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Если сообществ нет -->
+            <div class="no-communities" id="no-communities" style="display: none;">
+                <div class="no-communities-icon">
+                    <i class="fas fa-users-slash"></i>
+                </div>
+                <h2>Сообществ не найдено</h2>
+                <p>Попробуйте изменить параметры поиска или выберите другую категорию</p>
+                <button class="btn btn-primary" onclick="resetFilters()">
+                    <i class="fas fa-redo"></i>
+                    Сбросить фильтры
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Подвал (оригинальный как на главной) -->
+    <footer class="footer mt-4">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Мой Город</h3>
+                    <p>Форум для обсуждения городских вопросов жителями.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Навигация</h3>
+                    <div class="footer-links">
+                        <a href="/web/">Главная</a>
+                        <a href="/web/auth">Вход/Регистрация</a>
+                        <a href="/web/communities">Сообщества</a>
+                        <a href="#">Правила</a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>Контакты</h3>
+                    <div class="footer-links">
+                        <a href="#">Обратная связь</a>
+                        <a href="#">Поддержка</a>
+                        <a href="#">Реклама</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2023 Форум "Мой Город". Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Скрипты -->
+    <script src="/static/js/notifications.js"></script>
+    <script>
+        // Фильтрация сообществ
+        document.querySelectorAll('.theme-filter').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Обновляем активную кнопку
+                document.querySelectorAll('.theme-filter').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Применяем фильтр
+                applyFilters();
+            });
+        });
+
+        // Поиск сообществ
+        const searchInput = document.querySelector('.search-input');
+        searchInput.addEventListener('input', applyFilters);
+
+        // Функция применения фильтров
+        function applyFilters() {
+            const activeFilter = document.querySelector('.theme-filter.active').dataset.filter;
+            const searchQuery = searchInput.value.toLowerCase();
+            const communities = document.querySelectorAll('.community-card');
+            let visibleCount = 0;
+
+            communities.forEach(community => {
+                const title = community.querySelector('.community-title').textContent.toLowerCase();
+                const description = community.querySelector('.community-description').textContent.toLowerCase();
+                const category = community.dataset.category;
+                const members = parseInt(community.dataset.members);
+                const date = parseInt(community.dataset.date);
+                
+                let shouldShow = true;
+
+                // Применяем поиск
+                if (searchQuery && !title.includes(searchQuery) && !description.includes(searchQuery)) {
+                    shouldShow = false;
+                }
+
+                // Применяем фильтр по категории
+                if (activeFilter === 'all') {
+                    // Показываем все
+                } else if (activeFilter === 'popular' && members < 500) {
+                    shouldShow = false;
+                } else if (activeFilter === 'new' && date < 2024) {
+                    shouldShow = false;
+                } else if (activeFilter !== 'all' && activeFilter !== 'popular' && activeFilter !== 'new') {
+                    if (category !== activeFilter) {
+                        shouldShow = false;
+                    }
+                }
+
+                // Показываем/скрываем сообщество
+                community.style.display = shouldShow ? 'block' : 'none';
+                if (shouldShow) visibleCount++;
+            });
+
+            // Показываем/скрываем сообщение "нет сообществ"
+            const noCommunities = document.getElementById('no-communities');
+            noCommunities.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+
+        // Обработка кнопок "Присоединиться"
+        document.querySelectorAll('.join-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const communityCard = this.closest('.community-card');
+                const communityName = communityCard.querySelector('.community-title').textContent;
+                
+                if (this.classList.contains('joined')) {
+                    this.classList.remove('joined');
+                    this.innerHTML = '<i class="fas fa-user-plus"></i> Присоединиться';
+                    
+                    if (typeof notify !== 'undefined') {
+                        notify.success(`Вы вышли из сообщества "${communityName}"`);
+                    } else {
+                        alert(`Вы вышли из сообщества "${communityName}"`);
+                    }
+                } else {
+                    this.classList.add('joined');
+                    this.innerHTML = '<i class="fas fa-check"></i> Вы в сообществе';
+                    
+                    if (typeof notify !== 'undefined') {
+                        notify.success(`Вы присоединились к сообществу "${communityName}"`);
+                    } else {
+                        alert(`Вы присоединились к сообществу "${communityName}"`);
+                    }
+                }
+            });
+        });
+
+        // Сброс фильтров
+        function resetFilters() {
+            document.querySelectorAll('.theme-filter').forEach(btn => {
+                if (btn.dataset.filter === 'all') {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            searchInput.value = '';
+            applyFilters();
+        }
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Страница сообществ загружена');
+            applyFilters(); // Применяем фильтры по умолчанию
+        });
+    </script>
+</body>
+</html>
