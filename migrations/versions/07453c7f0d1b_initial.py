@@ -1,8 +1,8 @@
-"""Initial database schema
+"""Initial
 
-Revision ID: 54b230ad2541
-Revises: 8019d75e3d9f
-Create Date: 2025-12-03 12:03:24.488312
+Revision ID: 07453c7f0d1b
+Revises: 
+Create Date: 2025-12-11 19:54:10.470492
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '54b230ad2541'
-down_revision: Union[str, Sequence[str], None] = '8019d75e3d9f'
+revision: str = '07453c7f0d1b'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -25,20 +25,43 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('description', sa.String(length=255), nullable=False),
-    sa.Column('posts_count', sa.Integer(), nullable=False),
-    sa.Column('members_count', sa.Integer(), nullable=False),
+    sa.Column('posts_count', sa.Integer(), nullable=True),
+    sa.Column('members_count', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('themes',
+    op.create_table('roles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
-    sa.Column('posts_count', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
+    )
+    op.create_table('themes',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=False),
+    sa.Column('posts_count', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
+    op.create_table('users',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('email', sa.String(length=100), nullable=False),
+    sa.Column('hashed_password', sa.String(length=300), nullable=False),
+    sa.Column('role_id', sa.Integer(), nullable=False),
+    sa.Column('reputation', sa.Integer(), nullable=True),
+    sa.Column('posts_count', sa.Integer(), nullable=True),
+    sa.Column('comments_count', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email')
     )
     op.create_table('posts',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -47,8 +70,8 @@ def upgrade() -> None:
     sa.Column('community_id', sa.Integer(), nullable=True),
     sa.Column('header', sa.String(length=255), nullable=False),
     sa.Column('body', sa.String(length=2500), nullable=False),
-    sa.Column('likes', sa.Integer(), nullable=False),
-    sa.Column('dislikes', sa.Integer(), nullable=False),
+    sa.Column('likes', sa.Integer(), nullable=True),
+    sa.Column('dislikes', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.ForeignKeyConstraint(['community_id'], ['communities.id'], ),
@@ -70,29 +93,25 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('post_id', sa.Integer(), nullable=False),
     sa.Column('body', sa.String(length=1500), nullable=False),
-    sa.Column('likes', sa.Integer(), nullable=False),
-    sa.Column('dislikes', sa.Integer(), nullable=False),
+    sa.Column('likes', sa.Integer(), nullable=True),
+    sa.Column('dislikes', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.add_column('users', sa.Column('reputation', sa.Integer(), nullable=False))
-    op.add_column('users', sa.Column('posts_count', sa.Integer(), nullable=False))
-    op.add_column('users', sa.Column('comments_count', sa.Integer(), nullable=False))
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_column('users', 'comments_count')
-    op.drop_column('users', 'posts_count')
-    op.drop_column('users', 'reputation')
     op.drop_table('comments')
     op.drop_table('user_communities')
     op.drop_table('posts')
+    op.drop_table('users')
     op.drop_table('themes')
+    op.drop_table('roles')
     op.drop_table('communities')
     # ### end Alembic commands ###
