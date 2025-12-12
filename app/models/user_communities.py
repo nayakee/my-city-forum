@@ -9,8 +9,10 @@ if TYPE_CHECKING:
  
 class UserCommunityModel(Base):
     __tablename__ = "user_communities"
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    community_id: Mapped[int] = mapped_column(ForeignKey("communities.id"), primary_key=True)
 
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    community_id: Mapped[int] = mapped_column(ForeignKey("communities.id"), nullable=False)
+    
     user: Mapped["UserModel"] = relationship(back_populates="community_associations")
     community: Mapped["CommunityModel"] = relationship(back_populates="user_associations")

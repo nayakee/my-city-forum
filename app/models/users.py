@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from app.models.roles import RoleModel
     from app.models.communities import CommunityModel
     from app.models.user_communities import UserCommunityModel
+    from app.models.reports import ReportModel
 
 
 class UserModel(Base):
@@ -29,4 +30,16 @@ class UserModel(Base):
     community_associations: Mapped[list["UserCommunityModel"]] = relationship(
         back_populates="user"
     )
- 
+    reports_made: Mapped[list["ReportModel"]] = relationship(
+        "ReportModel", 
+        foreign_keys="ReportModel.reporter_id",
+        back_populates="reporter",
+        cascade="all, delete-orphan"
+    )
+    
+    reports_moderated: Mapped[list["ReportModel"]] = relationship(
+        "ReportModel", 
+        foreign_keys="ReportModel.moderator_id",
+        back_populates="moderator",
+        cascade="all, delete-orphan"
+    )

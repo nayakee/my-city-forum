@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, ForeignKey, Integer
+from datetime import datetime
+from sqlalchemy import String, ForeignKey, Integer, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.database import Base
 
@@ -20,6 +21,8 @@ class PostModel(Base):
 
     header: Mapped[str] = mapped_column(String(255), unique=False, nullable=False)
     body: Mapped[str] = mapped_column(String(2500), unique=False, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     likes: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
     dislikes: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
