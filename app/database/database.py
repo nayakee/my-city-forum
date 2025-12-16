@@ -13,7 +13,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from app.config import settings
 
 BASE_DIR = Path(__file__).parent.parent
-DATABASE_URL = f"sqlite+aiosqlite:///{BASE_DIR}/forum.db"
+
+DATABASE_URL = settings.get_db_url
 
 engine = create_async_engine(settings.get_db_url)
 
@@ -43,6 +44,16 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
 
 async def create_tables():
     """Создание всех таблиц в базе данных"""
+    # Импортируем все модели для регистрации в Base до создания таблиц
+    from app.models.users import UserModel
+    from app.models.roles import RoleModel
+    from app.models.posts import PostModel
+    from app.models.comments import CommentModel
+    from app.models.communities import CommunityModel
+    from app.models.user_communities import UserCommunityModel
+    from app.models.themes import ThemeModel
+    from app.models.reports import ReportModel
+    
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     print("✅ Таблицы базы данных созданы")
@@ -50,6 +61,16 @@ async def create_tables():
 
 async def drop_tables():
     """Удаление всех таблиц из базы данных (для тестов)"""
+    # Импортируем все модели для регистрации в Base перед удалением таблиц
+    from app.models.users import UserModel
+    from app.models.roles import RoleModel
+    from app.models.posts import PostModel
+    from app.models.comments import CommentModel
+    from app.models.communities import CommunityModel
+    from app.models.user_communities import UserCommunityModel
+    from app.models.themes import ThemeModel
+    from app.models.reports import ReportModel
+    
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     print("🗑️  Таблицы базы данных удалены")
@@ -58,5 +79,6 @@ async def drop_tables():
 def create_sync_engine():
     """Создание синхронного движка для Alembic миграций"""
     from sqlalchemy import create_engine
-    sync_database_url = f"sqlite:///{BASE_DIR}/forum.db"
+    from app.config import settings
+    sync_database_url = settings.get_db_url.replace('+aiosqlite', '')  # Преобразуем URL для синхронного движка
     return create_engine(sync_database_url, echo=True)

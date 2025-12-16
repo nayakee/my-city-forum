@@ -13,16 +13,16 @@ class CommentModel(Base):
     __tablename__ = "comments"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped [int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    post_id: Mapped [int] = mapped_column(ForeignKey("posts.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"), nullable=False)
 
     body: Mapped[str] = mapped_column(String(1500), unique=False, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    likes: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
-    dislikes: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
+    likes: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
+    dislikes: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
 
     user: Mapped["UserModel"] = relationship(back_populates="comments")
-    posts: Mapped["PostModel"] = relationship(back_populates="comments")
+    post: Mapped["PostModel"] = relationship(back_populates="comments")
 

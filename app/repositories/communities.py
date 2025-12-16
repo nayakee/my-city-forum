@@ -9,7 +9,8 @@ class CommunitiesRepository(BaseRepository[CommunityModel]):
     """Репозиторий для работы с сообществами"""
     
     def __init__(self, session: AsyncSession):
-        super().__init__(CommunityModel, session)
+        self.model = CommunityModel
+        self.session = session
 
     async def get_by_name(self, name: str) -> Optional[CommunityModel]:
         """Получение сообщества по имени"""

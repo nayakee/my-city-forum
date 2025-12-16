@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, Path
 
-from app.api.dependencies import DBDep, CurrentUserDep
+from app.api.dependencies import DBDep, UserDepWithRole
 from app.exceptions.comments import (
     CommentNotFoundError,
     CommentNotFoundHTTPError,
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/comments", tags=["Комментарии"])
 async def create_comment(
     comment_data: SCommentAdd,
     db: DBDep,
-    current_user: CurrentUserDep,
+    current_user = Depends(UserDepWithRole),
 ) -> dict[str, str]:
     try:
         await CommentService(db).create_comment(comment_data, current_user.id)
@@ -33,9 +33,9 @@ async def create_comment(
 @router.get("", summary="Получение всех комментариев пользователя")
 async def get_user_comments(
     db: DBDep,
-    current_user: CurrentUserDep,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
+    current_user = Depends(UserDepWithRole),
 ) -> list[SCommentGet]:
     comments = await CommentService(db).get_comments_by_user(
         user_id=current_user.id,
@@ -99,15 +99,17 @@ async def get_comment(
 async def update_comment(
     comment_data: SCommentUpdate,
     db: DBDep,
-    current_user: CurrentUserDep,
     comment_id: int,
+    current_user = Depends(UserDepWithRole),
 ) -> dict[str, str]:
     try:
+        # Проверяем, является ли пользователь администратором
+        is_admin = current_user.role.level >= 3  # Администратор
         await CommentService(db).update_comment(
             comment_id=comment_id,
             comment_data=comment_data,
             user_id=current_user.id,
-            is_admin=getattr(current_user, "is_admin", False)
+            is_admin=is_admin
         )
     except CommentNotFoundError:
         raise CommentNotFoundHTTPError
@@ -120,14 +122,16 @@ async def update_comment(
 @router.delete("/{comment_id}", summary="Удаление комментария")
 async def delete_comment(
     db: DBDep,
-    current_user: CurrentUserDep,
     comment_id: int,
+    current_user = Depends(UserDepWithRole),
 ) -> dict[str, str]:
     try:
+        # Проверяем, является ли пользователь администратором
+        is_admin = current_user.role.level >= 3  # Администратор
         await CommentService(db).delete_comment(
             comment_id=comment_id,
             user_id=current_user.id,
-            is_admin=getattr(current_user, "is_admin", False)
+            is_admin=is_admin
         )
     except CommentNotFoundError:
         raise CommentNotFoundHTTPError

@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 
 class SRoleAdd(BaseModel):
     name: str
+    level: int = 1  # 1 - обычный пользователь, 2 - модератор, 3 - администратор
 
 
 class SRoleGet(SRoleAdd):

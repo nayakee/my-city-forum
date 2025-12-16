@@ -5,8 +5,9 @@ const API = {
     LOGOUT: '/auth/logout',
     REGISTER: '/auth/register',
     ME: '/auth/me',
-    POSTS: '/posts',
-    TOPICS: '/topics',
+    POSTS: '/api/posts',  // Основной эндпоинт для постов
+    POSTS_DETAILED: '/api/posts/detailed',  // Для постов с деталями
+    THEMES: '/themes',
     STATS: '/stats'
 };
 
@@ -14,18 +15,18 @@ const API = {
 let appState = {
     user: null,
     posts: [],
-    topics: [],
+    themes: [],
     stats: {},
     currentPage: 1,
     totalPages: 1,
     sortBy: 'new',
-    filterTopic: 'all',
+    filterTheme: 'all',
     isCreatingPost: false
 };
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Главная страница форума загружена');
+    console.log('DOMContentLoaded сработал');
     
     // Загружаем начальные данные
     loadInitialData();
@@ -36,22 +37,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Загрузка начальных данных
 async function loadInitialData() {
+    console.log('loadInitialData начата');
     try {
         // Проверяем авторизацию
         await checkAuthStatus();
+        console.log('Проверка авторизации завершена');
         
         // Загружаем темы
-        await loadTopics();
+        await loadThemes();
+        console.log('Темы загружены:', appState.themes);
         
         // Загружаем статистику
         await loadStats();
+        console.log('Статистика загружена');
         
         // Загружаем посты
         await loadPosts();
+        console.log('Посты загружены');
         
         // Обновляем интерфейс
         updateUI();
-        
+        console.log('Интерфейс обновлен');
     } catch (error) {
         console.error('Ошибка загрузки данных:', error);
         showNotification('Ошибка загрузки данных', 'error');
@@ -80,30 +86,42 @@ async function checkAuthStatus() {
 }
 
 // Загрузка тем
-async function loadTopics() {
+async function loadThemes() {
     try {
-        const response = await fetch(API_BASE_URL + API.TOPICS, {
+        console.log('Загрузка тем начата...');
+        const response = await fetch(API_BASE_URL + API.THEMES, {
             method: 'GET',
             credentials: 'include'
         });
         
+        console.log('Ответ от API тем:', response.status);
         if (response.ok) {
-            appState.topics = await response.json();
+            appState.themes = await response.json();
+            console.log('Темы успешно загружены:', appState.themes);
         } else {
-            // Если API тем нет, используем заглушки
-            appState.topics = [
-                { id: 1, name: 'Городские новости', count: 0, icon: 'building' },
-                { id: 2, name: 'Транспорт и дороги', count: 0, icon: 'car' },
-                { id: 3, name: 'Благоустройство', count: 0, icon: 'tree' },
-                { id: 4, name: 'ЖКХ и услуги', count: 0, icon: 'home' },
-                { id: 5, name: 'Культура и отдых', count: 0, icon: 'theater-masks' },
-                { id: 6, name: 'Безопасность', count: 0, icon: 'shield-alt' }
+            console.error('Ошибка при загрузке тем:', response.status);
+            // Если API тем не работает, используем заглушки с правильными ID из базы данных
+            appState.themes = [
+                { id: 1, name: 'Новости', posts_count: 0, icon: 'newspaper', created_at: null, updated_at: null },
+                { id: 2, name: 'Недвижимость', posts_count: 0, icon: 'building', created_at: null, updated_at: null },
+                { id: 3, name: 'Работа', posts_count: 0, icon: 'briefcase', created_at: null, updated_at: null }
             ];
         }
     } catch (error) {
         console.error('Ошибка загрузки тем:', error);
-        appState.topics = [];
+        // В случае ошибки используем темы из базы данных как заглушки
+        appState.themes = [
+            { id: 1, name: 'Новости', posts_count: 0, icon: 'newspaper', created_at: null, updated_at: null },
+            { id: 2, name: 'Недвижимость', posts_count: 0, icon: 'building', created_at: null, updated_at: null },
+            { id: 3, name: 'Работа', posts_count: 0, icon: 'briefcase', created_at: null, updated_at: null }
+        ];
     }
+}
+
+// Вспомогательная функция для получения названия темы по ID
+function getThemeNameById(themeId) {
+    const theme = appState.themes.find(t => t.id === themeId);
+    return theme ? theme.name : 'Без темы';
 }
 
 // Загрузка статистики
@@ -121,7 +139,7 @@ async function loadStats() {
             appState.stats = {
                 users: 0,
                 posts: 0,
-                topics: appState.topics.length,
+                themes: appState.themes.length,
                 comments: 0
             };
         }
@@ -130,7 +148,7 @@ async function loadStats() {
         appState.stats = {
             users: 0,
             posts: 0,
-            topics: 0,
+            themes: 0,
             comments: 0
         };
     }
@@ -142,24 +160,61 @@ async function loadPosts() {
         // Параметры запроса
         const params = new URLSearchParams({
             page: appState.currentPage,
-            sort: appState.sortBy,
-            topic: appState.filterTopic === 'all' ? '' : appState.filterTopic
+            limit: 10
         });
         
-        const response = await fetch(API_BASE_URL + API.POSTS + '?' + params, {
+        // Добавляем параметр сортировки, если не 'new' (по умолчанию)
+        if (appState.sortBy !== 'new') {
+            params.append('sort', appState.sortBy);
+        }
+        
+        // Добавляем параметр фильтрации по теме, если не 'all'
+        if (appState.filterTheme !== 'all') {
+            const themeId = parseInt(appState.filterTheme);
+            if (!isNaN(themeId)) {
+                params.append('theme_id', themeId);
+            }
+        }
+        
+        // Сначала пробуем получить посты с дополнительной информацией
+        const response = await fetch(API_BASE_URL + API.POSTS_DETAILED + '?' + params, {
             method: 'GET',
             credentials: 'include'
         });
         
         if (response.ok) {
             const data = await response.json();
-            appState.posts = data.posts || [];
-            appState.totalPages = data.total_pages || 1;
-            appState.currentPage = data.current_page || 1;
+            appState.posts = data.map(post => ({
+                id: post.id,
+                title: post.header,
+                content: post.body,
+                author_name: post.user_name,
+                created_at: post.created_at,
+                likes: post.likes || 0,
+                dislikes: post.dislikes || 0,
+                comments_count: post.comments_count || 0,
+                theme_id: post.theme_id,
+                theme_name: post.theme_name
+            }));
+            // Устанавливаем totalPages и currentPage, если они есть в ответе
+            if (data.total_pages !== undefined) appState.totalPages = data.total_pages;
+            if (data.current_page !== undefined) appState.currentPage = data.current_page;
         } else {
-            // Если API постов нет, показываем сообщение
-            appState.posts = [];
-            appState.totalPages = 1;
+            // Если detailed endpoint не сработал, пробуем стандартный endpoint
+            const response = await fetch(API_BASE_URL + API.POSTS + '?' + params, {
+                method: 'GET',
+                credentials: 'include'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                appState.posts = data.posts || [];
+                appState.totalPages = data.total_pages || 1;
+                appState.currentPage = data.current_page || 1;
+            } else {
+                appState.posts = [];
+                appState.totalPages = 1;
+            }
         }
     } catch (error) {
         console.error('Ошибка загрузки постов:', error);
@@ -170,10 +225,15 @@ async function loadPosts() {
 
 // Настройка обработчиков событий
 function setupEventListeners() {
+    console.log('setupEventListeners начата');
+    
     // Кнопка выхода
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
+        console.log('Обработчик logoutBtn добавлен');
+    } else {
+        console.log('Элемент logoutBtn не найден');
     }
     
     // Создание поста
@@ -183,26 +243,33 @@ function setupEventListeners() {
     
     if (showCreatePostBtn) {
         showCreatePostBtn.addEventListener('click', showCreatePostForm);
+        console.log('Обработчик showCreatePostBtn добавлен');
+    } else {
+        console.log('Элемент showCreatePostBtn не найден');
     }
     
     if (cancelPostBtn) {
         cancelPostBtn.addEventListener('click', hideCreatePostForm);
+        console.log('Обработчик cancelPostBtn добавлен');
+    } else {
+        console.log('Элемент cancelPostBtn не найден');
     }
     
     if (createPostForm) {
         createPostForm.addEventListener('submit', handleCreatePost);
+        console.log('Обработчик createPostForm добавлен');
+    } else {
+        console.log('Элемент createPostForm не найден');
     }
     
     // Сортировка и фильтрация
     const sortSelect = document.getElementById('sort-select');
-    const topicFilter = document.getElementById('topic-filter');
     
     if (sortSelect) {
         sortSelect.addEventListener('change', handleSortChange);
-    }
-    
-    if (topicFilter) {
-        topicFilter.addEventListener('change', handleTopicFilterChange);
+        console.log('Обработчик sortSelect добавлен');
+    } else {
+        console.log('Элемент sortSelect не найден');
     }
     
     // Пагинация
@@ -211,11 +278,38 @@ function setupEventListeners() {
     
     if (prevPageBtn) {
         prevPageBtn.addEventListener('click', goToPreviousPage);
+        console.log('Обработчик prevPageBtn добавлен');
+    } else {
+        console.log('Элемент prevPageBtn не найден');
     }
     
     if (nextPageBtn) {
         nextPageBtn.addEventListener('click', goToNextPage);
+        console.log('Обработчик nextPageBtn добавлен');
+    } else {
+        console.log('Элемент nextPageBtn не найден');
     }
+    
+    // Обработчики для кнопок тем
+    setupThemeButtonListeners();
+}
+
+// Настройка обработчиков для кнопок тем
+function setupThemeButtonListeners() {
+    const themeBtns = document.querySelectorAll('.theme-btn');
+    themeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const themeId = this.getAttribute('data-theme-id');
+            const themeName = this.getAttribute('data-theme-name');
+            document.getElementById('post-theme').value = themeId;
+            document.getElementById('post-theme-name').value = themeName;
+            
+            // Убираем активный класс у всех кнопок
+            themeBtns.forEach(b => b.classList.remove('active'));
+            // Добавляем активный класс к выбранной кнопке
+            this.classList.add('active');
+        });
+    });
 }
 
 // Обновление интерфейса
@@ -223,11 +317,11 @@ function updateUI() {
     // Обновляем информацию о пользователе
     updateUserUI();
     
+    // Обновляем темы в селекторах
+    updateThemeSelectors();
+    
     // Обновляем форму создания поста
     updateCreatePostUI();
-    
-    // Обновляем темы в селекторах
-    updateTopicsSelectors();
     
     // Обновляем статистику
     updateStatsUI();
@@ -273,10 +367,10 @@ function updateCreatePostUI() {
         // Пользователь авторизован
         if (guestNotice) guestNotice.style.display = 'none';
         if (showCreatePostBtn) {
-            showCreatePostBtn.textContent = appState.isCreatingPost ? 'Скрыть форму' : 'Создать пост';
-            showCreatePostBtn.innerHTML = appState.isCreatingPost ? 
-                '<i class="fas fa-times"></i> Скрыть форму' : 
-                '<i class="fas fa-pen"></i> Создать пост';
+            showCreatePostBtn.textContent = appState.isCreatingPost ? 'Скрыть форму' : 'Новый пост';
+            showCreatePostBtn.innerHTML = appState.isCreatingPost ?
+                '<i class="fas fa-times"></i> Скрыть форму' :
+                '<i class="fas fa-plus"></i> Новый пост';
         }
         if (createPostCard) {
             createPostCard.style.display = appState.isCreatingPost ? 'block' : 'none';
@@ -286,71 +380,124 @@ function updateCreatePostUI() {
         if (createPostCard) createPostCard.style.display = 'none';
         if (guestNotice) guestNotice.style.display = 'block';
         if (showCreatePostBtn) {
-            showCreatePostBtn.textContent = 'Создать пост';
-            showCreatePostBtn.innerHTML = '<i class="fas fa-pen"></i> Создать пост';
+            showCreatePostBtn.textContent = 'Новый пост';
+            showCreatePostBtn.innerHTML = '<i class="fas fa-plus"></i> Новый пост';
         }
     }
+    
+    // Обновляем селектор тем в форме создания поста
+    updateThemeSelectors();
 }
 
 // Обновление селекторов тем
-function updateTopicsSelectors() {
-    const postTopicSelect = document.getElementById('post-topic');
-    const topicFilterSelect = document.getElementById('topic-filter');
-    const topicsList = document.getElementById('topics-list');
+function updateThemeSelectors() {
+    const postThemeSelect = document.getElementById('post-theme');
+    const themesList = document.getElementById('themes-list');
+    const themeFiltersContainer = document.getElementById('theme-filters');
+    
+    console.log('updateThemeSelectors вызвана, тем в состоянии:', appState.themes.length);
     
     // Заполняем селектор тем для создания поста
-    if (postTopicSelect) {
-        postTopicSelect.innerHTML = '<option value="">-- Выберите тему --</option>';
-        appState.topics.forEach(topic => {
-            const option = document.createElement('option');
-            option.value = topic.id;
-            option.textContent = topic.name;
-            postTopicSelect.appendChild(option);
+    if (postThemeSelect) {
+        // Убираем старые обработчики и добавляем новые
+        const themeBtns = document.querySelectorAll('.theme-btn');
+        themeBtns.forEach(btn => {
+            // Удаляем старые обработчики
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
         });
-    }
-    
-    // Заполняем селектор фильтра тем
-    if (topicFilterSelect) {
-        topicFilterSelect.innerHTML = '<option value="all">Все темы</option>';
-        appState.topics.forEach(topic => {
-            const option = document.createElement('option');
-            option.value = topic.id;
-            option.textContent = topic.name;
-            if (appState.filterTopic === String(topic.id)) {
-                option.selected = true;
-            }
-            topicFilterSelect.appendChild(option);
+        
+        // Находим новые кнопки и добавляем обработчики
+        const newThemeBtns = document.querySelectorAll('.theme-btn');
+        newThemeBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const themeId = this.getAttribute('data-theme-id');
+                const themeName = this.getAttribute('data-theme-name');
+                document.getElementById('post-theme').value = themeId;
+                document.getElementById('post-theme-name').value = themeName;
+                
+                // Убираем активный класс у всех кнопок
+                newThemeBtns.forEach(b => b.classList.remove('active'));
+                // Добавляем активный класс к выбранной кнопке
+                this.classList.add('active');
+            });
         });
     }
     
     // Заполняем список тем в боковой панели
-    if (topicsList) {
-        topicsList.innerHTML = '';
+    if (themesList) {
+        themesList.innerHTML = '';
         
-        appState.topics.forEach(topic => {
-            const topicItem = document.createElement('div');
-            topicItem.className = 'topic-item';
-            if (appState.filterTopic === String(topic.id)) {
-                topicItem.classList.add('active');
+        appState.themes.forEach(theme => {
+            const themeItem = document.createElement('div');
+            themeItem.className = 'theme-item';
+            if (appState.filterTheme === String(theme.id)) {
+                themeItem.classList.add('active');
             }
             
-            topicItem.innerHTML = `
-                <div class="topic-icon">
-                    <i class="fas fa-${topic.icon || 'tag'}"></i>
+            themeItem.innerHTML = `
+                <div class="theme-icon">
+                    <i class="fas fa-${theme.icon || 'tag'}"></i>
                 </div>
-                <div class="topic-info">
-                    <h4>${topic.name}</h4>
-                    <div class="topic-count">${topic.count || 0} постов</div>
+                <div class="theme-info">
+                    <h4>${theme.name}</h4>
+                    <div class="theme-count">${theme.posts_count || theme.count || 0} постов</div>
                 </div>
             `;
             
-            topicItem.addEventListener('click', () => {
-                appState.filterTopic = String(topic.id);
+            themeItem.addEventListener('click', () => {
+                appState.filterTheme = String(theme.id);
                 appState.currentPage = 1;
                 loadPosts().then(() => updateUI());
             });
             
-            topicsList.appendChild(topicItem);
+            themesList.appendChild(themeItem);
+        });
+    }
+    
+    // Генерируем кнопки фильтрации тем над лентой постов
+    if (themeFiltersContainer) {
+        // Очищаем контейнер и добавляем кнопку "Все" снова
+        themeFiltersContainer.innerHTML = '';
+        
+        // Кнопка "Все" остается статичной
+        const allButton = document.createElement('button');
+        allButton.className = appState.filterTheme === 'all' ? 'theme-filter active' : 'theme-filter';
+        allButton.setAttribute('data-theme', 'all');
+        allButton.id = 'theme-filter-all';
+        allButton.innerHTML = '<i class="fas fa-layer-group"></i> Все';
+        allButton.addEventListener('click', handleThemeFilterChange);
+        themeFiltersContainer.appendChild(allButton);
+        
+        // Добавляем кнопки для каждой темы
+        appState.themes.forEach(theme => {
+            const themeButton = document.createElement('button');
+            themeButton.className = `theme-filter ${theme.name.toLowerCase()}`;
+            if (appState.filterTheme === String(theme.id)) {
+                themeButton.classList.add('active');
+            }
+            themeButton.setAttribute('data-theme', theme.id);
+            themeButton.id = `theme-filter-${theme.id}`;
+            
+            // Определяем иконку для темы
+            let iconClass = 'tag'; // иконка по умолчанию
+            if (theme.name.toLowerCase().includes('новост')) {
+                iconClass = 'newspaper';
+            } else if (theme.name.toLowerCase().includes('недвижим')) {
+                iconClass = 'building';
+            } else if (theme.name.toLowerCase().includes('работ')) {
+                iconClass = 'briefcase';
+            } else if (theme.name.toLowerCase().includes('транспорт')) {
+                iconClass = 'bus';
+            } else if (theme.name.toLowerCase().includes('эколог')) {
+                iconClass = 'leaf';
+            } else if (theme.name.toLowerCase().includes('культ')) {
+                iconClass = 'theater-masks';
+            }
+            
+            themeButton.innerHTML = `<i class="fas fa-${iconClass}"></i> ${theme.name}`;
+            themeButton.addEventListener('click', handleThemeFilterChange);
+            themeFiltersContainer.appendChild(themeButton);
         });
     }
 }
@@ -365,7 +512,7 @@ function updateStatsUI() {
         const stats = [
             { label: 'Пользователей', value: appState.stats.users || 0, icon: 'users' },
             { label: 'Постов', value: appState.stats.posts || 0, icon: 'file-alt' },
-            { label: 'Тем', value: appState.stats.topics || appState.topics.length, icon: 'tags' },
+            { label: 'Тем', value: appState.stats.themes || appState.themes.length, icon: 'tags' },
             { label: 'Комментариев', value: appState.stats.comments || 0, icon: 'comments' }
         ];
         
@@ -391,10 +538,8 @@ function updatePostsUI() {
     
     if (appState.posts.length === 0) {
         postsFeed.innerHTML = `
-            <div class="empty-posts">
-                <i class="fas fa-inbox"></i>
-                <h3>Пока нет постов</h3>
-                <p>Будьте первым, кто создаст пост!</p>
+            <div class="no-posts-message">
+                <p>Пока нет постов. Будьте первым, кто создаст пост!</p>
             </div>
         `;
         return;
@@ -403,66 +548,155 @@ function updatePostsUI() {
     postsFeed.innerHTML = '';
     
     appState.posts.forEach(post => {
-        const postElement = document.createElement('article');
-        postElement.className = 'post';
+        // Создаем пост в формате, соответствующем серверному шаблону
+        const postElement = document.createElement('div');
+        postElement.className = `post ${post.theme_name ? post.theme_name.toLowerCase() : 'general'}`;
+        postElement.setAttribute('data-theme', post.theme_name ? post.theme_name.toLowerCase() : 'general');
         
         // Форматируем дату
         const postDate = new Date(post.created_at || Date.now());
-        const timeAgo = getTimeAgo(postDate);
+        const formattedDate = postDate.toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).replace('.', ' ');
         
-        // Находим тему поста
-        const topic = appState.topics.find(t => t.id === post.topic_id) || 
-                     appState.topics.find(t => t.name === post.topic_name) || 
-                     { name: 'Без темы', icon: 'tag' };
+        // Получаем первые 2 буквы имени пользователя для аватара
+        const userInitials = (post.author_name || '??').substring(0, 2).toUpperCase();
         
         postElement.innerHTML = `
             <div class="post-header">
-                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(post.author_name || 'Аноним')}&background=4caf50&color=fff" 
-                     alt="Аватар" class="post-avatar">
-                <div class="post-author">
-                    <h3>${post.author_name || 'Анонимный пользователь'}</h3>
-                    <span class="post-time">
-                        ${timeAgo} • 
-                        <span class="post-category">
-                            <i class="fas fa-${topic.icon || 'tag'}"></i> ${topic.name}
-                        </span>
-                    </span>
+                <div class="post-avatar">
+                    ${userInitials}
+                </div>
+                <div class="post-meta">
+                    <span class="post-theme ${post.theme_name ? post.theme_name.toLowerCase() : 'general'}">${post.theme_name || 'Общее'}</span>
+                    ${post.author_name || 'Анонимный пользователь'} • ${formattedDate}
                 </div>
             </div>
-            <h2 class="post-title">${post.title || 'Без названия'}</h2>
-            <div class="post-content">${post.content || 'Нет содержания'}</div>
-            
-            ${post.tags ? `
-            <div class="post-tags">
-                ${post.tags.split(',').map(tag => 
-                    `<span class="tag">#${tag.trim()}</span>`
-                ).join('')}
-            </div>
-            ` : ''}
-            
-            <div class="post-footer">
-                <button class="post-action like-btn" data-post-id="${post.id}">
-                    <i class="far fa-thumbs-up"></i> 
-                    <span>${post.likes || 0}</span>
-                </button>
-                <button class="post-action comment-btn">
-                    <i class="far fa-comment"></i> 
-                    <span class="post-stats">${post.comments || 0} комментариев</span>
-                </button>
-                <button class="post-action share-btn">
-                    <i class="far fa-share-square"></i>
+            <h4 class="post-title">${post.title || post.header || 'Без названия'}</h4>
+            <div class="post-content">${post.content || post.body || 'Нет содержания'}</div>
+            <div class="post-actions">
+                <div class="vote-buttons">
+                    <button class="vote-btn like" data-post-id="${post.id}">
+                        <i class="fas fa-thumbs-up"></i>
+                        <span class="vote-count">${post.likes || 0}</span>
+                    </button>
+                    <button class="vote-btn dislike" data-post-id="${post.id}">
+                        <i class="fas fa-thumbs-down"></i>
+                        <span class="vote-count">${post.dislikes || 0}</span>
+                    </button>
+                </div>
+                <button class="btn" onclick="showComments('${post.id}')">
+                    <i class="far fa-comment"></i> <span id="comment-count-${post.id}">${post.comments_count || post.comments || 0}</span> комментариев
                 </button>
             </div>
         `;
         
-        // Добавляем обработчик лайка
-        const likeBtn = postElement.querySelector('.like-btn');
+        // Добавляем обработчики событий для кнопок лайков и дизлайков
+        const likeBtn = postElement.querySelector('.vote-btn.like');
+        const dislikeBtn = postElement.querySelector('.vote-btn.dislike');
+        
         if (likeBtn) {
-            likeBtn.addEventListener('click', () => handleLike(post.id));
+            likeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleLike(post.id);
+            });
+        }
+        
+        if (dislikeBtn) {
+            dislikeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleDislike(post.id);
+            });
         }
         
         postsFeed.appendChild(postElement);
     });
+}
+
+// Функция для добавления нового поста в ленту без перезагрузки страницы
+function addPostToFeed(post) {
+    const postsFeed = document.getElementById('posts-feed');
+    if (!postsFeed) return;
+    
+    // Удаляем сообщение "Пока нет постов", если это первый пост
+    const noPostsMessage = postsFeed.querySelector('.no-posts-message');
+    if (noPostsMessage) {
+        noPostsMessage.remove();
+    }
+    
+    // Создаем пост в формате, соответствующем серверному шаблону
+    const postElement = document.createElement('div');
+    postElement.className = `post ${post.theme_name ? post.theme_name.toLowerCase() : 'general'}`;
+    postElement.setAttribute('data-theme', post.theme_name ? post.theme_name.toLowerCase() : 'general');
+    
+    // Форматируем дату
+    const postDate = new Date(post.created_at || Date.now());
+    const formattedDate = postDate.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).replace('.', ' ');
+    
+    // Получаем первые 2 буквы имени пользователя для аватара
+    const userInitials = (post.author_name || '??').substring(0, 2).toUpperCase();
+    
+    postElement.innerHTML = `
+        <div class="post-header">
+            <div class="post-avatar">
+                ${userInitials}
+            </div>
+            <div class="post-meta">
+                <span class="post-theme ${post.theme_name ? post.theme_name.toLowerCase() : 'general'}">${post.theme_name || 'Общее'}</span>
+                ${post.author_name || 'Анонимный пользователь'} • ${formattedDate}
+            </div>
+        </div>
+        <h4 class="post-title">${post.title || post.header || 'Без названия'}</h4>
+        <div class="post-content">${post.content || post.body || 'Нет содержания'}</div>
+        <div class="post-actions">
+            <div class="vote-buttons">
+                <button class="vote-btn like" data-post-id="${post.id}">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span class="vote-count">${post.likes || 0}</span>
+                </button>
+                <button class="vote-btn dislike" data-post-id="${post.id}">
+                    <i class="fas fa-thumbs-down"></i>
+                    <span class="vote-count">${post.dislikes || 0}</span>
+                </button>
+            </div>
+            <button class="btn" onclick="showComments('${post.id}')">
+                <i class="far fa-comment"></i> <span id="comment-count-${post.id}">${post.comments_count || post.comments || 0}</span> комментариев
+            </button>
+        </div>
+    `;
+    
+    // Добавляем обработчики событий для кнопок лайков и дизлайков
+    const likeBtn = postElement.querySelector('.vote-btn.like');
+    const dislikeBtn = postElement.querySelector('.vote-btn.dislike');
+    
+    if (likeBtn) {
+        likeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleLike(post.id);
+        });
+    }
+    
+    if (dislikeBtn) {
+        dislikeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleDislike(post.id);
+        });
+    }
+    
+    // Добавляем пост в начало ленты
+    if (postsFeed.firstChild) {
+        postsFeed.insertBefore(postElement, postsFeed.firstChild);
+    } else {
+        postsFeed.appendChild(postElement);
+    }
 }
 
 // Обновление пагинации
@@ -495,11 +729,34 @@ function updatePaginationUI() {
 function showCreatePostForm() {
     if (!appState.user) {
         showNotification('Для создания поста необходимо войти в систему', 'info');
+        // Показываем уведомление для гостей
+        const guestNotice = document.getElementById('guest-notice');
+        if (guestNotice) {
+            guestNotice.style.display = 'block';
+            setTimeout(() => {
+                guestNotice.style.display = 'none';
+            }, 3000);
+        }
         return;
     }
     
-    appState.isCreatingPost = !appState.isCreatingPost;
-    updateCreatePostUI();
+    // Проверяем, загружены ли темы
+    if (appState.themes.length === 0) {
+        showNotification('Загрузка тем...', 'info');
+        // Загружаем темы, если они не загружены
+        loadThemes().then(() => {
+            // После загрузки тем обновляем UI и показываем форму
+            updateUI();
+            appState.isCreatingPost = true;
+            updateCreatePostUI();
+        }).catch(error => {
+            console.error('Ошибка загрузки тем:', error);
+            showNotification('Ошибка загрузки тем. Попробуйте перезагрузить страницу.', 'error');
+        });
+    } else {
+        appState.isCreatingPost = !appState.isCreatingPost;
+        updateCreatePostUI();
+    }
 }
 
 // Скрыть форму создания поста
@@ -510,25 +767,49 @@ function hideCreatePostForm() {
     // Очищаем форму
     const form = document.getElementById('create-post-form');
     if (form) form.reset();
+    
+    // Сбрасываем активный класс у кнопок тем
+    const themeBtns = document.querySelectorAll('.theme-btn');
+    themeBtns.forEach(btn => btn.classList.remove('active'));
+    
+    // Сбрасываем первую тему как активную
+    if (themeBtns.length > 0) {
+        themeBtns[0].classList.add('active');
+        const postTheme = document.getElementById('post-theme');
+        const postThemeName = document.getElementById('post-theme-name');
+        if (postTheme) postTheme.value = themeBtns[0].getAttribute('data-theme-id');
+        if (postThemeName) postThemeName.value = themeBtns[0].getAttribute('data-theme-name');
+    }
 }
 
 // Обработка создания поста
 async function handleCreatePost(e) {
+    console.log('handleCreatePost вызвана');
     e.preventDefault();
     
     if (!appState.user) {
+        console.log('Пользователь не авторизован');
         showNotification('Для создания поста необходимо войти в систему', 'error');
         return;
     }
     
     const title = document.getElementById('post-title').value.trim();
     const content = document.getElementById('post-content').value.trim();
-    const topicId = document.getElementById('post-topic').value;
-    const tags = document.getElementById('post-tags').value.trim();
+    const themeIdValue = document.getElementById('post-theme').value;
+    console.log('Полученные данные:', { title, content, themeId: themeIdValue });
     
     // Валидация
-    if (!title || !content || !topicId) {
+    if (!title || !content || !themeIdValue) {
+        console.log('Ошибка валидации:', { title: !!title, content: !!content, themeId: !!themeIdValue });
         showNotification('Заполните обязательные поля', 'error');
+        return;
+    }
+    
+    // Преобразуем themeIdValue в число и проверяем его корректность
+    const themeId = parseInt(themeIdValue, 10);
+    console.log('themeId после parseInt:', themeId);
+    if (isNaN(themeId) || themeId <= 0) {
+        showNotification('Выберите корректную тему', 'error');
         return;
     }
     
@@ -543,13 +824,16 @@ async function handleCreatePost(e) {
     }
     
     const postData = {
-        title: title,
-        content: content,
-        topic_id: parseInt(topicId),
-        tags: tags
+        header: title,
+        body: content,
+        theme_id: themeId,
+        community_id: null,  // Явно указываем null для опционального поля
+        is_published: true
     };
+    console.log('Данные для отправки:', postData);
     
     try {
+        // ИСПРАВЛЕНО: отправляем на /api/posts (без /web)
         const response = await fetch(API_BASE_URL + API.POSTS, {
             method: 'POST',
             headers: {
@@ -559,24 +843,66 @@ async function handleCreatePost(e) {
             body: JSON.stringify(postData),
             credentials: 'include'
         });
+        console.log('Ответ от сервера:', response.status);
         
-        const data = await response.json();
+        const contentType = response.headers.get('content-type');
+        let data;
         
-        if (response.status === 200 || response.status === 201) {
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            console.log('Ответ не JSON:', text);
+            data = { detail: text || 'Неизвестная ошибка' };
+        }
+        
+        console.log('Данные ответа:', data);
+        
+        if (response.ok) {
             showNotification('Пост успешно создан!', 'success');
             hideCreatePostForm();
             
-            // Перезагружаем посты
+            // Создаем объект нового поста для добавления в ленту
+            const newPost = {
+                id: data.post_id || Date.now(), // используем ID из ответа или временный
+                title: title,
+                content: content,
+                author_name: appState.user?.name || 'Вы',
+                created_at: new Date().toISOString(),
+                likes: 0,
+                dislikes: 0,
+                comments_count: 0,
+                theme_id: themeId,
+                theme_name: getThemeNameById(themeId) // используем вспомогательную функцию для получения названия темы
+            };
+            
+            // Добавляем пост в ленту без перезагрузки страницы
+            addPostToFeed(newPost);
+            
+            // Перезагружаем посты для обновления состояния
             appState.currentPage = 1;
             await loadPosts();
-            updateUI();
             
         } else {
-            showNotification(data.detail || 'Ошибка создания поста', 'error');
+            // Проверяем, является ли data объектом и содержит ли он detail
+            let errorMessage = 'Ошибка создания поста';
+            if (data && typeof data === 'object') {
+                if (data.detail) {
+                    errorMessage = data.detail;
+                } else if (data.message) {
+                    errorMessage = data.message;
+                } else if (Array.isArray(data)) {
+                    // Если data - массив ошибок, объединяем их
+                    errorMessage = data.map(err => err.msg || err.detail || 'Ошибка').join('; ');
+                }
+            } else if (typeof data === 'string') {
+                errorMessage = data;
+            }
+            showNotification(errorMessage, 'error');
         }
     } catch (error) {
         console.error('Ошибка создания поста:', error);
-        showNotification('Не удалось создать пост', 'error');
+        showNotification('Не удалось создать пост. Проверьте подключение к интернету.', 'error');
     }
 }
 
@@ -587,9 +913,26 @@ function handleSortChange(e) {
     loadPosts().then(() => updateUI());
 }
 
+// Обновление состояния кнопок фильтра тем
+function updateThemeFilterButtons() {
+    // Находим все кнопки фильтра тем
+    const themeFilterButtons = document.querySelectorAll('.theme-filter');
+    themeFilterButtons.forEach(button => {
+        const themeValue = button.getAttribute('data-theme');
+        if (themeValue === appState.filterTheme || (appState.filterTheme === 'all' && themeValue === 'all')) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    });
+}
+
 // Обработка изменения фильтра тем
-function handleTopicFilterChange(e) {
-    appState.filterTopic = e.target.value;
+function handleThemeFilterChange(e) {
+    // Находим, какая кнопка была нажата
+    const clickedButton = e.currentTarget;
+    const themeValue = clickedButton.getAttribute('data-theme');
+    appState.filterTheme = themeValue;
     appState.currentPage = 1;
     loadPosts().then(() => updateUI());
 }
@@ -618,23 +961,67 @@ async function handleLike(postId) {
     }
     
     try {
-        // В реальном приложении здесь будет запрос к API
-        showNotification('Лайк добавлен!', 'success');
+        const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/like`, {
+            method: 'POST',
+            credentials: 'include'
+        });
         
-        // Обновляем интерфейс
-        const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
-        if (likeBtn) {
-            const span = likeBtn.querySelector('span');
-            let count = parseInt(span.textContent) || 0;
-            count++;
-            span.textContent = count;
-            likeBtn.classList.add('liked');
-            likeBtn.innerHTML = `<i class="fas fa-thumbs-up"></i> <span>${count}</span>`;
+        if (response.ok) {
+            showNotification('Лайк добавлен!', 'success');
+            
+            // Обновляем интерфейс
+            const likeBtn = document.querySelector(`.vote-btn.like[data-post-id="${postId}"]`);
+            if (likeBtn) {
+                const span = likeBtn.querySelector('span');
+                let count = parseInt(span.textContent) || 0;
+                count++;
+                span.textContent = count;
+                likeBtn.classList.add('active-like');
+                likeBtn.innerHTML = `<i class="fas fa-thumbs-up"></i> <span class="vote-count">${count}</span>`;
+            }
+        } else {
+            showNotification('Ошибка добавления лайка', 'error');
         }
         
     } catch (error) {
         console.error('Ошибка добавления лайка:', error);
         showNotification('Ошибка добавления лайка', 'error');
+    }
+}
+
+// Обработка дизлайка
+async function handleDislike(postId) {
+    if (!appState.user) {
+        showNotification('Для оценки поста необходимо войти в систему', 'info');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/dislike`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            showNotification('Дизлайк добавлен!', 'success');
+            
+            // Обновляем интерфейс
+            const dislikeBtn = document.querySelector(`.vote-btn.dislike[data-post-id="${postId}"]`);
+            if (dislikeBtn) {
+                const span = dislikeBtn.querySelector('span');
+                let count = parseInt(span.textContent) || 0;
+                count++;
+                span.textContent = count;
+                dislikeBtn.classList.add('active-dislike');
+                dislikeBtn.innerHTML = `<i class="fas fa-thumbs-down"></i> <span class="vote-count">${count}</span>`;
+            }
+        } else {
+            showNotification('Ошибка добавления дизлайка', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка добавления дизлайка:', error);
+        showNotification('Ошибка добавления дизлайка', 'error');
     }
 }
 
@@ -674,7 +1061,7 @@ function getTimeAgo(date) {
     const now = new Date();
     const diff = now - date;
     
-    const minutes = Math.floor(diff / 60000);
+    const minutes = Math.floor(diff / 6000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
     
@@ -692,43 +1079,18 @@ function getTimeAgo(date) {
     });
 }
 
-// Показ уведомлений
-function showNotification(message, type = 'success') {
-    const notification = document.getElementById('notification');
-    if (notification) {
-        notification.textContent = message;
-        notification.className = `notification ${type}`;
-        notification.classList.add('show');
-        
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 3000);
-    } else {
-        // Создаем временное уведомление
-        const tempNotif = document.createElement('div');
-        tempNotif.textContent = message;
-        tempNotif.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            border-radius: 5px;
-            color: white;
-            background: ${type === 'success' ? '#388e3c' : type === 'error' ? '#d32f2f' : '#2196f3'};
-            z-index: 2000;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        `;
-        document.body.appendChild(tempNotif);
-        
-        setTimeout(() => {
-            document.body.removeChild(tempNotif);
-        }, 3000);
-    }
-}
 // Показ уведомлений (обновленная версия)
 function showNotification(message, type = 'success') {
+    // Создаем контейнер для уведомлений, если его нет
+    let notificationsContainer = document.getElementById('notifications-container');
+    if (!notificationsContainer) {
+        notificationsContainer = document.createElement('div');
+        notificationsContainer.id = 'notifications-container';
+        document.body.appendChild(notificationsContainer);
+    }
+    
     // Удаляем старые уведомления
-    const oldNotifications = document.querySelectorAll('.notification');
+    const oldNotifications = notificationsContainer.querySelectorAll('.notification-item');
     oldNotifications.forEach(notif => {
         notif.classList.add('slide-out');
         setTimeout(() => {
@@ -740,7 +1102,7 @@ function showNotification(message, type = 'success') {
     
     // Создаем новое уведомление
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
+    notification.className = `notification-item ${type}`;
     
     // Если message это объект, преобразуем в строку
     if (typeof message === 'object') {
@@ -759,9 +1121,12 @@ function showNotification(message, type = 'success') {
         }
     }
     
-    notification.textContent = message;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <span>${message}</span>
+    `;
     
-    document.body.appendChild(notification);
+    notificationsContainer.appendChild(notification);
     
     // Удаляем через 5 секунд
     setTimeout(() => {
@@ -772,4 +1137,23 @@ function showNotification(message, type = 'success') {
             }
         }, 300);
     }, 5000);
+}
+
+// Функция для отображения комментариев к посту
+async function showComments(postId) {
+    try {
+        // Преобразуем postId в число, если он пришел как строка
+        const numericId = parseInt(postId, 10);
+        if (isNaN(numericId)) {
+            console.error('Некорректный ID поста:', postId);
+            showNotification('Некорректный ID поста', 'error');
+            return;
+        }
+        // Здесь можно реализовать логику для загрузки и отображения комментариев
+        // Пока что просто перенаправляем на страницу поста
+        window.location.href = `/web/post/${numericId}`;
+    } catch (error) {
+        console.error('Ошибка при загрузке комментариев:', error);
+        showNotification('Не удалось загрузить комментарии', 'error');
+    }
 }

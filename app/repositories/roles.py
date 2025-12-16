@@ -12,11 +12,14 @@ class RolesRepository(BaseRepository):
     schema = SRoleGet
 
     async def get_one_or_none_with_users(self, **filter_by):
-        query = (
-            select(self.model)
-            .filter_by(**filter_by)
-            .options(selectinload(self.model.users))
-        )
+        query = select(self.model)
+        
+        # Применяем фильтрацию по именованным параметрам
+        for key, value in filter_by.items():
+            if hasattr(self.model, key) and value is not None:
+                query = query.filter(getattr(self.model, key) == value)
+                
+        query = query.options(selectinload(self.model.users))
 
         result = await self.session.execute(query)
 

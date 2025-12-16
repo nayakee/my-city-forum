@@ -10,14 +10,14 @@ class SUserAddRequest(BaseModel):
     name: str
     email: EmailStr
     password: str
-    role_id: int
+    role_id: int = 1  # По умолчанию пользовательская роль
 
 
 class SUserAdd(BaseModel):
     name: str
     email: EmailStr
     hashed_password: str
-    role_id: int
+    role_id: int = 1
 
 
 class SUserAuth(BaseModel):
@@ -25,8 +25,11 @@ class SUserAuth(BaseModel):
     password: str
 
 
+from datetime import datetime
+
 class SUserGet(SUserAdd):
     id: int
+    created_at: datetime | None = None # Добавляем поле даты создания
 
 
 class SUserPatch(BaseModel):

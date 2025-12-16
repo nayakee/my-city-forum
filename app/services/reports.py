@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Optional, List, Tuple, Dict, Any
 from sqlalchemy import select, update, delete, func, and_, or_
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.reports import ReportModel, ReportContentTypeEnum, ReportStatusEnum
 from app.models.posts import PostModel
@@ -18,74 +17,62 @@ from app.exceptions.reports import (
 
 
 class ReportService:
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    def __init__(self, db):
+        self.db = db  # DBManager instance
 
     async def create_report(self, report_data: SReportCreate, reporter_id: int) -> ReportModel:
         """Создание новой жалобы"""
         # Проверяем существование контента
         content_exists = await self._check_content_exists(
-            report_data.content_type, 
+            report_data.content_type,
             report_data.content_id
         )
         if not content_exists:
             raise ContentNotFoundError
         
         # Проверяем дубликаты
-        duplicate_query = select(ReportModel).where(
-            and_(
-                ReportModel.reporter_id == reporter_id,
-                ReportModel.content_type == ReportContentTypeEnum(report_data.content_type.value),
-                ReportModel.content_id == report_data.content_id
-            )
+        existing_reports = await self.db.reports.get_filtered(
+            filter_by={
+                'reporter_id': reporter_id,
+                'content_type': ReportContentTypeEnum(report_data.content_type.value),
+                'content_id': report_data.content_id
+            }
         )
-        duplicate_result = await self.db.execute(duplicate_query)
-        if duplicate_result.scalar_one_or_none():
+        if existing_reports:
             raise DuplicateReportError
         
         # Создаем жалобу
-        new_report = ReportModel(
-            reporter_id=reporter_id,
-            content_type=ReportContentTypeEnum(report_data.content_type.value),
-            content_id=report_data.content_id,
-            reason=report_data.reason,
-            description=report_data.description,
-            status=ReportStatusEnum.PENDING,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
-        )
+        report_data_dict = {
+            'reporter_id': reporter_id,
+            'content_type': ReportContentTypeEnum(report_data.content_type.value),
+            'content_id': report_data.content_id,
+            'reason': report_data.reason,
+            'description': report_data.description,
+            'status': ReportStatusEnum.PENDING,
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow()
+        }
         
-        self.db.add(new_report)
-        await self.db.commit()
-        await self.db.refresh(new_report)
+        new_report = await self.db.reports.add(report_data_dict)
         return new_report
 
     async def get_report(self, report_id: int) -> Optional[ReportModel]:
         """Получение жалобы по ID"""
-        query = select(ReportModel).where(ReportModel.id == report_id)
-        result = await self.db.execute(query)
-        return result.scalar_one_or_none()
+        return await self.db.reports.get(report_id)
 
     async def get_report_with_details(self, report_id: int) -> Optional[Dict[str, Any]]:
         """Получение жалобы с детальной информацией"""
-        query = select(ReportModel).where(ReportModel.id == report_id)
-        result = await self.db.execute(query)
-        report = result.scalar_one_or_none()
-        
+        report = await self.db.reports.get(report_id)
         if not report:
             return None
         
         # Получаем информацию о репортере
-        reporter_query = select(UserModel).where(UserModel.id == report.reporter_id)
-        reporter_result = await self.db.execute(reporter_query)
-        reporter = reporter_result.scalar_one_or_none()
+        reporter = await self.db.users.get(report.reporter_id)
         
         # Получаем информацию о модераторе (если есть)
         moderator = None
         if report.moderator_id:
-            moderator_query = select(UserModel).where(UserModel.id == report.moderator_id)
-            moderator_result = await self.db.execute(moderator_query)
-            moderator = moderator_result.scalar_one_or_none()
+            moderator = await self.db.users.get(report.moderator_id)
         
         # Получаем информацию о контенте
         content_info = await self._get_content_info(report.content_type, report.content_id)
@@ -111,48 +98,44 @@ class ReportService:
         return result_dict
 
     async def get_reports(
-        self, 
-        skip: int = 0, 
+        self,
+        skip: int = 0,
         limit: int = 100,
         status: Optional[ReportStatus] = None,
         content_type: Optional[ContentType] = None,
         reporter_id: Optional[int] = None
     ) -> List[ReportModel]:
         """Получение списка жалоб с фильтрацией"""
-        query = select(ReportModel)
-        
-        conditions = []
+        filters = {}
         if status:
-            conditions.append(ReportModel.status == ReportStatusEnum(status.value))
+            filters['status'] = ReportStatusEnum(status.value)
         if content_type:
-            conditions.append(ReportModel.content_type == ReportContentTypeEnum(content_type.value))
+            filters['content_type'] = ReportContentTypeEnum(content_type.value)
         if reporter_id:
-            conditions.append(ReportModel.reporter_id == reporter_id)
-        
-        if conditions:
-            query = query.where(and_(*conditions))
-        
-        query = query.offset(skip).limit(limit).order_by(ReportModel.created_at.desc())
-        
-        result = await self.db.execute(query)
-        return result.scalars().all()
+            filters['reporter_id'] = reporter_id
+            
+        return await self.db.reports.get_filtered(
+            **filters,
+            offset=skip,
+            limit=limit
+        )
 
     async def get_reports_with_details(
-        self, 
-        skip: int = 0, 
+        self,
+        skip: int = 0,
         limit: int = 100,
         status: Optional[ReportStatus] = None
     ) -> List[Dict[str, Any]]:
         """Получение жалоб с дополнительной информацией"""
-        base_query = select(ReportModel)
-        
+        filters = {}
         if status:
-            base_query = base_query.where(ReportModel.status == ReportStatusEnum(status.value))
-        
-        base_query = base_query.offset(skip).limit(limit).order_by(ReportModel.created_at.desc())
-        
-        result = await self.db.execute(base_query)
-        reports = result.scalars().all()
+            filters['status'] = ReportStatusEnum(status.value)
+            
+        reports = await self.db.reports.get_filtered(
+            **filters,
+            offset=skip,
+            limit=limit
+        )
         
         detailed_reports = []
         for report in reports:
@@ -163,9 +146,9 @@ class ReportService:
         return detailed_reports
 
     async def update_report(
-        self, 
-        report_id: int, 
-        report_data: SReportUpdate, 
+        self,
+        report_id: int,
+        report_data: SReportUpdate,
         moderator_id: int
     ) -> None:
         """Обновление жалобы (только модераторы)"""
@@ -173,7 +156,7 @@ class ReportService:
         if not report:
             raise ReportNotFoundError
         
-        # Обновляем жалобу
+        # Подготовим данные для обновления
         update_values = {
             "updated_at": datetime.utcnow(),
             "moderator_id": moderator_id
@@ -185,14 +168,7 @@ class ReportService:
         if report_data.moderator_comment:
             update_values["moderator_comment"] = report_data.moderator_comment
         
-        query = (
-            update(ReportModel)
-            .where(ReportModel.id == report_id)
-            .values(**update_values)
-        )
-        
-        await self.db.execute(query)
-        await self.db.commit()
+        await self.db.reports.edit(update_values, id=report_id)
 
     async def delete_report(self, report_id: int, user_id: int, is_admin: bool = False) -> None:
         """Удаление жалобы (только автор или админ)"""
@@ -204,55 +180,38 @@ class ReportService:
         if not is_admin and report.reporter_id != user_id:
             raise ReportAccessDeniedError
         
-        query = delete(ReportModel).where(ReportModel.id == report_id)
-        await self.db.execute(query)
-        await self.db.commit()
+        await self.db.reports.delete(id=report_id)
 
     async def _check_content_exists(self, content_type: ContentType, content_id: int) -> bool:
         """Проверка существования контента"""
         if content_type == ContentType.POST:
-            query = select(PostModel).where(PostModel.id == content_id)
+            post = await self.db.posts.get(content_id)
+            return post is not None
         else:  # COMMENT
-            query = select(CommentModel).where(CommentModel.id == content_id)
-        
-        result = await self.db.execute(query)
-        return result.scalar_one_or_none() is not None
+            comment = await self.db.comments.get(content_id)
+            return comment is not None
 
     async def _get_content_info(self, content_type: ReportContentTypeEnum, content_id: int) -> Dict[str, Any]:
         """Получение информации о контенте"""
         if content_type == ReportContentTypeEnum.POST:
-            query = (
-                select(PostModel, UserModel.username)
-                .join(UserModel, PostModel.user_id == UserModel.id)
-                .where(PostModel.id == content_id)
-            )
-            result = await self.db.execute(query)
-            row = result.first()
-            
-            if row:
-                post, author_name = row
+            post = await self.db.posts.get(content_id)
+            if post:
+                author = await self.db.users.get(post.user_id)
                 return {
                     "content_preview": post.header[:100] if post.header else "",
                     "content_body": post.body[:200] if post.body else "",
                     "content_author_id": post.user_id,
-                    "content_author_name": author_name
+                    "content_author_name": author.username if author else "Unknown"
                 }
         else:  # COMMENT
-            query = (
-                select(CommentModel, UserModel.username)
-                .join(UserModel, CommentModel.user_id == UserModel.id)
-                .where(CommentModel.id == content_id)
-            )
-            result = await self.db.execute(query)
-            row = result.first()
-            
-            if row:
-                comment, author_name = row
+            comment = await self.db.comments.get(content_id)
+            if comment:
+                author = await self.db.users.get(comment.user_id)
                 return {
                     "content_preview": comment.body[:100] if comment.body else "",
                     "content_body": comment.body[:200] if comment.body else "",
                     "content_author_id": comment.user_id,
-                    "content_author_name": author_name
+                    "content_author_name": author.username if author else "Unknown"
                 }
         
         return {
@@ -265,16 +224,12 @@ class ReportService:
     async def _get_detailed_report_info(self, report: ReportModel) -> Dict[str, Any]:
         """Получение детальной информации о жалобе"""
         # Получаем информацию о репортере
-        reporter_query = select(UserModel).where(UserModel.id == report.reporter_id)
-        reporter_result = await self.db.execute(reporter_query)
-        reporter = reporter_result.scalar_one_or_none()
+        reporter = await self.db.users.get(report.reporter_id)
         
         # Получаем информацию о модераторе
         moderator = None
         if report.moderator_id:
-            moderator_query = select(UserModel).where(UserModel.id == report.moderator_id)
-            moderator_result = await self.db.execute(moderator_query)
-            moderator = moderator_result.scalar_one_or_none()
+            moderator = await self.db.users.get(report.moderator_id)
         
         # Получаем информацию о контенте
         content_info = await self._get_content_info(report.content_type, report.content_id)
@@ -298,42 +253,18 @@ class ReportService:
 
     async def get_report_stats(self) -> Dict[str, Any]:
         """Получение статистики по жалобам"""
-        # Общее количество жалоб
-        total_query = select(func.count(ReportModel.id))
-        total_result = await self.db.execute(total_query)
-        total = total_result.scalar() or 0
+        # Получаем все отчеты для подсчета статистики
+        all_reports = await self.db.reports.get_all()
+        total = len(all_reports)
         
-        # Жалобы по статусам
-        pending_query = select(func.count(ReportModel.id)).where(
-            ReportModel.status == ReportStatusEnum.PENDING
-        )
-        pending_result = await self.db.execute(pending_query)
-        pending = pending_result.scalar() or 0
+        # Подсчитываем по статусам
+        pending = len([r for r in all_reports if r.status == ReportStatusEnum.PENDING])
+        resolved = len([r for r in all_reports if r.status == ReportStatusEnum.RESOLVED])
+        rejected = len([r for r in all_reports if r.status == ReportStatusEnum.REJECTED])
         
-        resolved_query = select(func.count(ReportModel.id)).where(
-            ReportModel.status == ReportStatusEnum.RESOLVED
-        )
-        resolved_result = await self.db.execute(resolved_query)
-        resolved = resolved_result.scalar() or 0
-        
-        rejected_query = select(func.count(ReportModel.id)).where(
-            ReportModel.status == ReportStatusEnum.REJECTED
-        )
-        rejected_result = await self.db.execute(rejected_query)
-        rejected = rejected_result.scalar() or 0
-        
-        # Жалобы по типам контента
-        posts_query = select(func.count(ReportModel.id)).where(
-            ReportModel.content_type == ReportContentTypeEnum.POST
-        )
-        posts_result = await self.db.execute(posts_query)
-        posts_count = posts_result.scalar() or 0
-        
-        comments_query = select(func.count(ReportModel.id)).where(
-            ReportModel.content_type == ReportContentTypeEnum.COMMENT
-        )
-        comments_result = await self.db.execute(comments_query)
-        comments_count = comments_result.scalar() or 0
+        # Подсчитываем по типам контента
+        posts_count = len([r for r in all_reports if r.content_type == ReportContentTypeEnum.POST])
+        comments_count = len([r for r in all_reports if r.content_type == ReportContentTypeEnum.COMMENT])
         
         return {
             "total_reports": total,

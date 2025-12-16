@@ -1119,3 +1119,209 @@ textarea.form-control {
     width: 24px;
     height: 24px;
 }
+
+/* 21. СТИЛИ ДЛЯ СТРАНИЦЫ ПРОФИЛЯ */
+.profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.profile-header {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.profile-avatar {
+    flex-shrink: 0;
+}
+
+.profile-avatar img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #e8f5e9;
+}
+
+.profile-info {
+    flex-grow: 1;
+}
+
+.profile-info h1 {
+    font-size: 2.5rem;
+    margin: 0 0 0.5rem 0;
+    color: #1b5e20;
+}
+
+.profile-info p {
+    font-size: 1.2rem;
+    color: #666;
+    margin: 0 0 1.5rem 0;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: #f1f8e9;
+    border-radius: 8px;
+    min-width: 100px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #2e7d32;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.profile-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.profile-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.profile-tabs {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafafa;
+}
+
+.tab-btn {
+    padding: 1rem 2rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #666;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.tab-btn:hover {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.tab-btn.active {
+    color: #2e7d32;
+    background: white;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #4caf50;
+}
+
+.tab-content {
+    padding: 2rem;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+.activity-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.activity-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1rem;
+    border-left: 4px solid #e8f5e9;
+    background: #f1f8e9;
+    border-radius: 0 8px 8px 0;
+}
+
+.activity-icon {
+    font-size: 1.5rem;
+    color: #4caf50;
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+}
+
+.activity-content h4 {
+    margin: 0 0 0.25rem 0;
+    color: #1b5e20;
+}
+
+.activity-date {
+    margin: 0;
+    color: #757575;
+    font-size: 0.9rem;
+}
+
+.no-posts-message, .no-comments-message {
+    text-align: center;
+    padding: 3rem;
+    color: #757575;
+}
+
+.no-posts-message i, .no-comments-message i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #bdbdbd;
+}
+
+.no-posts-message h3, .no-comments-message h3 {
+    margin: 0 0 0.5rem 0;
+    color: #616161;
+}
+
+.no-posts-message p, .no-comments-message p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.posts-list, .comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}

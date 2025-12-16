@@ -9,7 +9,8 @@ class CommentsRepository(BaseRepository[CommentModel]):
     """Репозиторий для работы с комментариями"""
     
     def __init__(self, session: AsyncSession):
-        super().__init__(CommentModel, session)
+        self.model = CommentModel
+        self.session = session
 
     async def get_by_post(
         self, 

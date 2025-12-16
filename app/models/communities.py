@@ -7,6 +7,7 @@ from app.database.database import Base
 if TYPE_CHECKING:
     from app.models.users import UserModel
     from app.models.posts import PostModel
+    from app.models.user_communities import UserCommunityModel
 
 class CommunityModel(Base):
     __tablename__ = "communities"
@@ -15,9 +16,15 @@ class CommunityModel(Base):
     name: Mapped[str] = mapped_column(String(255), unique=False, nullable=False)
     description: Mapped[str] = mapped_column(String(255), unique=False, nullable=False)
 
-    posts_count: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
-    members_count: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
+    posts_count: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
+    members_count: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
 
-    users: Mapped[list["UserModel"]] = relationship(secondary="user_communities", back_populates="communities")
+    users: Mapped[list["UserModel"]] = relationship(
+        secondary="user_communities",
+        back_populates="communities",
+        overlaps="community_associations",
+        lazy="select"
+    )
 
+    user_associations: Mapped[list["UserCommunityModel"]] = relationship(back_populates="community", overlaps="users,communities")
     posts: Mapped[list["PostModel"]] = relationship(back_populates="community")

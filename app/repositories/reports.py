@@ -9,7 +9,8 @@ class ReportsRepository(BaseRepository[ReportModel]):
     """Репозиторий для работы с жалобами"""
     
     def __init__(self, session: AsyncSession):
-        super().__init__(ReportModel, session)
+        self.model = ReportModel
+        self.session = session
 
     async def get_by_status(
         self, 

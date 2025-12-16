@@ -70,10 +70,14 @@ class AuthService(BaseService):
             raise UserNotFoundError
         if not self.verify_password(user_data.password, user.hashed_password):
             raise InvalidPasswordError
+            
+        # Получаем имя роли, если роль существует
+        role_name = user.role.name if user.role else "user"  # по умолчанию "user"
+        
         access_token: str = self.create_access_token(
             {
                 "user_id": user.id,
-                "role": user.role.name,
+                "role": role_name,
             }
         )
         return access_token

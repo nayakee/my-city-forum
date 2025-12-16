@@ -15,8 +15,8 @@ class PostModel(Base):
     __tablename__ = "posts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped [int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    theme_id: Mapped [int] = mapped_column(ForeignKey("themes.id"), nullable = False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    theme_id: Mapped[int] = mapped_column(ForeignKey("themes.id"), nullable=False)
     community_id: Mapped[int] = mapped_column(ForeignKey("communities.id"), nullable=True)
 
     header: Mapped[str] = mapped_column(String(255), unique=False, nullable=False)
@@ -24,8 +24,8 @@ class PostModel(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    likes: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
-    dislikes: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
+    likes: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
+    dislikes: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
 
     user: Mapped["UserModel"] = relationship(back_populates="posts")
     theme: Mapped["ThemeModel"] = relationship(back_populates="posts")

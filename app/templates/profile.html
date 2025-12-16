@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль пользователя - Мой Город</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Шапка -->
+    <header class="header">
+        <div class="container header-container">
+            <!-- Логотип -->
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Мой Город</h1>
+                    <span>Форум жителей</span>
+                </div>
+            </div>
+
+            <!-- Навигация -->
+            <nav class="main-nav">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    Главная
+                </a>
+                <a href="/web/communities" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    Сообщества
+                </a>
+            </nav>
+
+            <!-- Авторизация -->
+            <div class="auth-section" id="auth-section">
+                <div class="auth-buttons" id="guest-buttons" style="display: none;">
+                    <a href="/web/auth" class="btn btn-outline">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Вход
+                    </a>
+                    <a href="/web/auth" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i>
+                        Регистрация
+                    </a>
+                </div>
+                
+                <div class="user-menu" id="user-menu">
+                    <div class="d-flex align-center gap-2">
+                        <img id="user-avatar" class="post-avatar" src="" alt="Аватар">
+                        <span id="username">Загрузка...</span>
+                        <button class="btn btn-outline btn-sm" id="logout-btn" type="button">
+                            <i class="fas fa-sign-out-alt"></i> Выход
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="container">
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <img id="profile-avatar" src="" alt="Аватар" />
+                </div>
+                <div class="profile-info">
+                    <h1 id="profile-name">Загрузка...</h1>
+                    <p id="profile-email">Загрузка...</p>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-value" id="posts-count">0</span>
+                            <span class="stat-label">Постов</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="comments-count">0</span>
+                            <span class="stat-label">Комментариев</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="likes-received">0</span>
+                            <span class="stat-label">Лайков</span>
+                        </div>
+                    </div>
+                    <div class="profile-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            Регистрация: <span id="joined-date">-</span>
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-user-tag"></i>
+                            Роль: <span id="user-role">-</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-content">
+                <div class="profile-tabs">
+                    <button class="tab-btn active" data-tab="activity">Активность</button>
+                    <button class="tab-btn" data-tab="posts">Мои посты</button>
+                    <button class="tab-btn" data-tab="comments">Мои комментарии</button>
+                </div>
+
+                <div class="tab-content">
+                    <div id="activity-tab" class="tab-pane active">
+                        <div class="activity-feed">
+                            <div class="activity-item">
+                                <i class="fas fa-edit activity-icon"></i>
+                                <div class="activity-content">
+                                    <h4>Создан первый пост</h4>
+                                    <p class="activity-date">Сегодня в 14:30</p>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <i class="fas fa-comment activity-icon"></i>
+                                <div class="activity-content">
+                                    <h4>Оставлен комментарий</h4>
+                                    <p class="activity-date">Вчера в 18:45</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="posts-tab" class="tab-pane">
+                        <div class="posts-list">
+                            <div class="no-posts-message">
+                                <i class="fas fa-inbox"></i>
+                                <h3>Пока нет постов</h3>
+                                <p>Вы еще не создали ни одного поста</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="comments-tab" class="tab-pane">
+                        <div class="comments-list">
+                            <div class="no-comments-message">
+                                <i class="fas fa-comments"></i>
+                                <h3>Пока нет комментариев</h3>
+                                <p>Вы еще не оставили ни одного комментария</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    <footer class="footer mt-4">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Мой Город</h3>
+                    <p>Форум для обсуждения городских вопросов жителями.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Навигация</h3>
+                    <div class="footer-links">
+                        <a href="/">Главная</a>
+                        <a href="/web/auth">Вход/Регистрация</a>
+                        <a href="/web/communities">Сообщества</a>
+                        <a href="#">Правила</a>
+                    </div>
+                <div class="footer-section">
+                    <h3>Контакты</h3>
+                    <div class="footer-links">
+                        <a href="#">Обратная связь</a>
+                        <a href="#">Поддержка</a>
+                        <a href="#">Реклама</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2023 Форум "Мой Город". Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Уведомления -->
+    <div id="notifications-container"></div>
+
+    <!-- Скрытый элемент для передачи данных пользователя из шаблона -->
+    <script id="user-data" type="application/json">
+        {
+            "name": "{{ user.name if user else '' }}",
+            "email": "{{ user.email if user else '' }}",
+            "role": {{ user.role.dict() | tojson if user and user.role else 'null' }},
+            "created_at": {{ user.created_at.isoformat() | tojson if user and user.created_at else 'null' }},
+            "stats": {{ stats | tojson if stats else '{}' }}
+        }
+    </script>
+
+    <!-- Скрипты -->
+    <script src="/static/js/notifications.js"></script>
+    <script>
+        // Загрузка данных профиля
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Проверяем, есть ли данные пользователя в шаблоне
+                const userDataElement = document.getElementById('user-data');
+                if (userDataElement) {
+                    // Если данные есть в шаблоне, используем их
+                    const userData = JSON.parse(userDataElement.textContent);
+                    const stats = userData.stats || {};
+                    
+                    // Обновляем информацию о пользователе
+                    document.getElementById('profile-name').textContent = userData.name || 'Аноним';
+                    document.getElementById('profile-email').textContent = userData.email || 'Нет email';
+                    document.getElementById('username').textContent = userData.name || 'Пользователь';
+                    document.getElementById('user-role').textContent = (userData.role && userData.role.name) || 'Пользователь';
+                    // Обрабатываем дату регистрации
+                    let joinedDate = 'Неизвестно';
+                    if (userData.created_at) {
+                        try {
+                            // Если это строка в формате ISO, преобразуем в дату
+                            const dateObj = new Date(userData.created_at);
+                            if (!isNaN(dateObj.getTime())) {
+                                joinedDate = dateObj.toLocaleDateString('ru-RU');
+                            } else {
+                                joinedDate = userData.created_at; // Если уже в нужном формате
+                            }
+                        } catch (e) {
+                            joinedDate = userData.created_at; // Возвращаем как есть
+                        }
+                    }
+                    document.getElementById('joined-date').textContent = joinedDate;
+                    
+                    // Обновляем аватар
+                    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'Пользователь')}&background=2e7d32&color=fff`;
+                    document.getElementById('profile-avatar').src = avatarUrl;
+                    document.getElementById('user-avatar').src = avatarUrl;
+                    
+                    // Обновляем статистику
+                    document.getElementById('posts-count').textContent = stats.posts_count || 0;
+                    document.getElementById('comments-count').textContent = stats.comments_count || 0;
+                    document.getElementById('likes-received').textContent = stats.likes_received || 0;
+                } else {
+                    // Если данные не были переданы, пробуем загрузить их с сервера
+                    loadProfileData();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки данных профиля:', error);
+                // Показываем уведомление об ошибке
+                showNotification('Ошибка загрузки данных профиля', 'error');
+            }
+            
+            // Настройка переключения вкладок
+            document.querySelectorAll('.tab-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Убираем активные классы
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+                    
+                    // Добавляем активные классы
+                    this.classList.add('active');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        });
+
+        // Функция для загрузки данных профиля с сервера (резервный вариант)
+        async function loadProfileData() {
+            try {
+                const response = await fetch('/auth/me', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    const stats = userData.stats || {};
+                    
+                    // Обновляем информацию о пользователе
+                    document.getElementById('profile-name').textContent = userData.name || 'Аноним';
+                    document.getElementById('profile-email').textContent = userData.email || 'Нет email';
+                    document.getElementById('username').textContent = userData.name || 'Пользователь';
+                    document.getElementById('user-role').textContent = userData.role?.name || 'Пользователь';
+                    document.getElementById('joined-date').textContent = stats.joined_date || 'Неизвестно';
+                    
+                    // Обновляем аватар
+                    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'Пользователь')}&background=2e7d32&color=fff`;
+                    document.getElementById('profile-avatar').src = avatarUrl;
+                    document.getElementById('user-avatar').src = avatarUrl;
+                    
+                    // Обновляем статистику
+                    document.getElementById('posts-count').textContent = stats.posts_count || 0;
+                    document.getElementById('comments-count').textContent = stats.comments_count || 0;
+                    document.getElementById('likes-received').textContent = stats.likes_received || 0;
+                } else {
+                    // Если пользователь не авторизован, перенаправляем
+                    window.location.href = '/web/auth';
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки профиля:', error);
+                // Показываем уведомление об ошибке
+                showNotification('Ошибка загрузки профиля', 'error');
+            }
+        }
+
+        // Обработчик выхода
+        document.getElementById('logout-btn')?.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    showNotification('Вы успешно вышли из системы', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/web/auth';
+                    }, 1000);
+                } else {
+                    showNotification('Ошибка при выходе', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка при выходе:', error);
+                showNotification('Ошибка соединения', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

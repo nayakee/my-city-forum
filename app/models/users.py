@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from app.models.communities import CommunityModel
     from app.models.user_communities import UserCommunityModel
     from app.models.reports import ReportModel
+    from app.models.posts import PostModel
+    from app.models.comments import CommentModel
 
 
 class UserModel(Base):
@@ -21,14 +23,18 @@ class UserModel(Base):
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
     role: Mapped["RoleModel"] = relationship(back_populates="users")
 
-    reputation: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
-    posts_count: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
-    comments_count: Mapped[int] = mapped_column(Integer, default=0, nullable = True)
+    reputation: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
+    posts_count: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
+    comments_count: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
     
-    communities: Mapped[list["CommunityModel"]] = relationship(secondary="user_communities", back_populates="users")
+    communities: Mapped[list["CommunityModel"]] = relationship(
+        secondary="user_communities",
+        back_populates="users",
+        lazy="select"
+    )
 
     community_associations: Mapped[list["UserCommunityModel"]] = relationship(
-        back_populates="user"
+        back_populates="user", overlaps="communities"
     )
     reports_made: Mapped[list["ReportModel"]] = relationship(
         "ReportModel", 
@@ -38,8 +44,11 @@ class UserModel(Base):
     )
     
     reports_moderated: Mapped[list["ReportModel"]] = relationship(
-        "ReportModel", 
+        "ReportModel",
         foreign_keys="ReportModel.moderator_id",
         back_populates="moderator",
         cascade="all, delete-orphan"
     )
+    
+    posts: Mapped[list["PostModel"]] = relationship(back_populates="user")
+    comments: Mapped[list["CommentModel"]] = relationship(back_populates="user")

@@ -9,7 +9,8 @@ class PostsRepository(BaseRepository[PostModel]):
     """Репозиторий для работы с постами"""
     
     def __init__(self, session: AsyncSession):
-        super().__init__(PostModel, session)
+        self.model = PostModel
+        self.session = session
 
     async def get_by_user(
         self, 

@@ -1,7 +1,7 @@
 from typing import Optional, List
 from fastapi import APIRouter, Depends, Query, Path
 
-from app.api.dependencies import DBDep, CurrentUserDep
+from app.api.dependencies import DBDep
 from app.exceptions.communities import (
     CommunityNotFoundError,
     CommunityNotFoundHTTPError,

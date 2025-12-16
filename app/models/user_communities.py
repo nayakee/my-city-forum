@@ -14,5 +14,5 @@ class UserCommunityModel(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     community_id: Mapped[int] = mapped_column(ForeignKey("communities.id"), nullable=False)
     
-    user: Mapped["UserModel"] = relationship(back_populates="community_associations")
-    community: Mapped["CommunityModel"] = relationship(back_populates="user_associations")
+    user: Mapped["UserModel"] = relationship(back_populates="community_associations", overlaps="communities,users")
+    community: Mapped["CommunityModel"] = relationship(back_populates="user_associations", overlaps="users,communities")

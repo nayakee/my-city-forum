@@ -11,7 +11,8 @@ class ThemesRepository(BaseRepository[ThemeModel]):
     """Репозиторий для работы с темами"""
     
     def __init__(self, session: AsyncSession):
-        super().__init__(ThemeModel, session)
+        self.model = ThemeModel
+        self.session = session
 
     async def get_by_name(self, name: str) -> Optional[ThemeModel]:
         """Получение темы по имени"""
