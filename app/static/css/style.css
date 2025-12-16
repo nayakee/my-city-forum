@@ -1264,39 +1264,6 @@ textarea.form-control {
     display: block;
 }
 
-.activity-feed {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.activity-item {
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
-    padding: 1rem;
-    border-left: 4px solid #e8f5e9;
-    background: #f1f8e9;
-    border-radius: 0 8px 8px 0;
-}
-
-.activity-icon {
-    font-size: 1.5rem;
-    color: #4caf50;
-    flex-shrink: 0;
-    margin-top: 0.25rem;
-}
-
-.activity-content h4 {
-    margin: 0 0 0.25rem 0;
-    color: #1b5e20;
-}
-
-.activity-date {
-    margin: 0;
-    color: #757575;
-    font-size: 0.9rem;
-}
 
 .no-posts-message, .no-comments-message {
     text-align: center;

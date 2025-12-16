@@ -24,7 +24,7 @@ function enableButton(button) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Страница авторизации загружена');
     
-    // Проверяем авторизацию
+    // Проверяем авторизацию, но не перенаправляем с этой страницы
     checkAuth();
     
     // Настраиваем обработчики
@@ -40,10 +40,24 @@ async function checkAuth() {
         });
         
         if (response.ok) {
-            window.location.href = '/';
+            // Если пользователь уже авторизован, НЕ перенаправляем с страницы авторизации
+            // Пусть пользователь сам решает, хочет ли он остаться или перейти на главную
+            const userData = await response.json();
+            // Сохраняем данные пользователя в localStorage для других страниц
+            localStorage.setItem('user', JSON.stringify(userData));
+            console.log('Пользователь уже авторизован, но остается на странице авторизации');
+        } else {
+            // Если пользователь не авторизован (ожидаемый сценарий для страницы авторизации)
+            // просто продолжаем работу без перенаправления
+            // Удаляем старые данные пользователя из localStorage
+            localStorage.removeItem('user');
+            console.log('Пользователь не авторизован - это ожидаемое поведение на странице авторизации');
         }
     } catch (error) {
-        console.log('Пользователь не авторизован');
+        // Обработка сетевых ошибок
+        console.log('Ошибка сети при проверке авторизации:', error);
+        // Удаляем старые данные пользователя из localStorage при ошибке
+        localStorage.removeItem('user');
     }
 }
 
@@ -109,7 +123,12 @@ async function handleLogin(e) {
         
         if (response.ok) {
             notify.success('Успешный вход!');
-            setTimeout(() => window.location.href = '/', 1000);
+            // После успешного входа обновляем информацию о пользователе в localStorage
+            // Вызываем checkAuth для получения и сохранения данных пользователя
+            setTimeout(async () => {
+                await checkAuth();  // Обновляем данные пользователя в localStorage
+                window.location.href = '/';  // Перенаправляем на главную
+            }, 1000);
         } else {
             // Извлекаем сообщение об ошибке
             let errorMessage = 'Ошибка авторизации';
@@ -197,6 +216,8 @@ async function handleRegister(e) {
             // Переключаем на форму входа и очищаем
             document.getElementById('login-tab').click();
             form.reset();
+            // Удаляем старые данные пользователя из localStorage после регистрации
+            localStorage.removeItem('user');
         } else {
             // Извлекаем сообщение об ошибке
             let errorMessage = 'Ошибка регистрации';

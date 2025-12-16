@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query, HTTPException
 from datetime import datetime
 
-from app.api.dependencies import DBDep, CurrentUserDep, UserIdDep
+from app.api.dependencies import DBDep, CurrentUserDep, UserIdDep, get_current_user_id
 from app.schemes.posts import SPostAdd
 
 router = APIRouter(prefix="/api/v2/posts", tags=["Посты v2"])
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/v2/posts", tags=["Посты v2"])
 async def create_post_v2(
     post_data: SPostAdd,
     db: DBDep,
-    current_user = UserIdDep,
+    current_user: int = Depends(get_current_user_id),
 ):
     """Создание нового поста с использованием модели"""
     try:

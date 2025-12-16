@@ -70,6 +70,9 @@ async def profile_page(
         # Подсчет лайков, полученных пользователем за его посты
         user_likes_count = sum(post.likes or 0 for post in user_posts)
         
+        # Получаем посты пользователя с дополнительной информацией
+        user_posts_detailed = await PostService(db).get_posts_for_web(user_id=user_id)
+        
         user_stats = {
             "posts_count": user_posts_count,
             "comments_count": user_comments_count,
@@ -80,7 +83,8 @@ async def profile_page(
         return templates.TemplateResponse("profile.html", {
             "request": request,
             "user": user_data,
-            "stats": user_stats
+            "stats": user_stats,
+            "user_posts": user_posts_detailed
         })
     except Exception as e:
         print(f"Ошибка при загрузке профиля: {e}")

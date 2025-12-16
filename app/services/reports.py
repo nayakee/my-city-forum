@@ -81,14 +81,14 @@ class ReportService:
         result_dict = {
             "id": report.id,
             "reporter_id": report.reporter_id,
-            "reporter_name": reporter.username if reporter else None,
+            "reporter_name": reporter.name if reporter else None,
             "content_type": report.content_type.value,
             "content_id": report.content_id,
             "reason": report.reason,
             "description": report.description,
             "status": report.status.value,
             "moderator_id": report.moderator_id,
-            "moderator_name": moderator.username if moderator else None,
+            "moderator_name": moderator.name if moderator else None,
             "moderator_comment": report.moderator_comment,
             "created_at": report.created_at,
             "updated_at": report.updated_at,
@@ -201,7 +201,7 @@ class ReportService:
                     "content_preview": post.header[:100] if post.header else "",
                     "content_body": post.body[:200] if post.body else "",
                     "content_author_id": post.user_id,
-                    "content_author_name": author.username if author else "Unknown"
+                    "content_author_name": author.name if author else "Unknown"
                 }
         else:  # COMMENT
             comment = await self.db.comments.get(content_id)
@@ -211,7 +211,7 @@ class ReportService:
                     "content_preview": comment.body[:100] if comment.body else "",
                     "content_body": comment.body[:200] if comment.body else "",
                     "content_author_id": comment.user_id,
-                    "content_author_name": author.username if author else "Unknown"
+                    "content_author_name": author.name if author else "Unknown"
                 }
         
         return {
@@ -237,14 +237,14 @@ class ReportService:
         return {
             "id": report.id,
             "reporter_id": report.reporter_id,
-            "reporter_name": reporter.username if reporter else None,
+            "reporter_name": reporter.name if reporter else None,
             "content_type": report.content_type.value,
             "content_id": report.content_id,
             "reason": report.reason,
             "description": report.description,
             "status": report.status.value,
             "moderator_id": report.moderator_id,
-            "moderator_name": moderator.username if moderator else None,
+            "moderator_name": moderator.name if moderator else None,
             "moderator_comment": report.moderator_comment,
             "created_at": report.created_at,
             "updated_at": report.updated_at,

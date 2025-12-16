@@ -380,10 +380,14 @@
                 
                 <div class="user-menu" id="user-menu" style="display: none;">
                     <div class="d-flex align-center gap-2">
-                        <div class="post-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
+                        <img id="user-avatar" class="post-avatar" src="" alt="Аватар">
                         <span id="username">Гость</span>
+                        <a href="/web/profile" class="btn btn-outline btn-sm" id="profile-link" style="margin-right: 8px;">
+                            <i class="fas fa-user"></i> Профиль
+                        </a>
+                        <button class="btn btn-outline btn-sm" id="logout-btn" type="button">
+                            <i class="fas fa-sign-out-alt"></i> Выход
+                        </button>
                     </div>
                 </div>
             </div>
@@ -732,6 +736,7 @@
 
     <!-- Скрипты -->
     <script src="/static/js/notifications.js"></script>
+    <script src="/static/js/main.js"></script>
     <script>
         // Фильтрация сообществ
         document.querySelectorAll('.theme-filter').forEach(btn => {

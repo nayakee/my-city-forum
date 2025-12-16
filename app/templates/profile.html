@@ -99,38 +99,41 @@
 
             <div class="profile-content">
                 <div class="profile-tabs">
-                    <button class="tab-btn active" data-tab="activity">Активность</button>
-                    <button class="tab-btn" data-tab="posts">Мои посты</button>
+                    <button class="tab-btn active" data-tab="posts">Мои посты</button>
                     <button class="tab-btn" data-tab="comments">Мои комментарии</button>
                 </div>
 
                 <div class="tab-content">
-                    <div id="activity-tab" class="tab-pane active">
-                        <div class="activity-feed">
-                            <div class="activity-item">
-                                <i class="fas fa-edit activity-icon"></i>
-                                <div class="activity-content">
-                                    <h4>Создан первый пост</h4>
-                                    <p class="activity-date">Сегодня в 14:30</p>
-                                </div>
-                            </div>
-                            <div class="activity-item">
-                                <i class="fas fa-comment activity-icon"></i>
-                                <div class="activity-content">
-                                    <h4>Оставлен комментарий</h4>
-                                    <p class="activity-date">Вчера в 18:45</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <div id="posts-tab" class="tab-pane">
                         <div class="posts-list">
-                            <div class="no-posts-message">
-                                <i class="fas fa-inbox"></i>
-                                <h3>Пока нет постов</h3>
-                                <p>Вы еще не создали ни одного поста</p>
-                            </div>
+                            {% if user_posts %}
+                                {% for post in user_posts %}
+                                    <div class="post-item">
+                                        <div class="post-header">
+                                            <div class="post-title">{{ post.header }}</div>
+                                            <div class="post-meta">
+                                                <span class="post-date">{{ post.created_at.strftime('%d.%m.%Y %H:%M') if post.created_at else 'Дата не указана' }}</span>
+                                                <span class="post-stats">
+                                                    <i class="fas fa-thumbs-up"></i> {{ post.likes or 0 }}
+                                                    <i class="fas fa-comment"></i> {{ post.comments_count or 0 }}
+                                                </span>
+                                            </div>
+                                        <div class="post-body">
+                                            <p>{{ post.body[:200] }}{% if post.body|length > 200 %}...{% endif %}</p>
+                                        </div>
+                                        <div class="post-footer">
+                                            <a href="/#post-{{ post.id }}" class="btn btn-outline btn-sm">Читать далее</a>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="no-posts-message">
+                                    <i class="fas fa-inbox"></i>
+                                    <h3>Пока нет постов</h3>
+                                    <p>Вы еще не создали ни одного поста</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -210,7 +213,17 @@
                     document.getElementById('profile-name').textContent = userData.name || 'Аноним';
                     document.getElementById('profile-email').textContent = userData.email || 'Нет email';
                     document.getElementById('username').textContent = userData.name || 'Пользователь';
-                    document.getElementById('user-role').textContent = (userData.role && userData.role.name) || 'Пользователь';
+                    // Определяем русское название роли
+                    const role = (userData.role && userData.role.name) || 'user';
+                    let roleName = 'Пользователь';
+                    if (role === 'admin') {
+                        roleName = 'Администратор';
+                    } else if (role === 'moderator') {
+                        roleName = 'Модератор';
+                    } else if (role === 'user') {
+                        roleName = 'Пользователь';
+                    }
+                    document.getElementById('user-role').textContent = roleName;
                     // Обрабатываем дату регистрации
                     let joinedDate = 'Неизвестно';
                     if (userData.created_at) {
@@ -259,9 +272,104 @@
                     // Добавляем активные классы
                     this.classList.add('active');
                     document.getElementById(`${tabId}-tab`).classList.add('active');
+                    
+                    // Если переключаемся на вкладку "мои посты" и она пуста, загружаем посты
+                    if (tabId === 'posts' && !this.dataset.loaded) {
+                        loadUserPosts();
+                        this.dataset.loaded = 'true';
+                    }
                 });
             });
+            
+            // Убедимся, что при загрузке страницы отображается первая вкладка (мои посты)
+            const firstTabBtn = document.querySelector('.tab-btn[data-tab="posts"]');
+            const firstTabPane = document.getElementById('posts-tab');
+            if (firstTabBtn && firstTabPane) {
+                firstTabBtn.classList.add('active');
+                firstTabPane.classList.add('active');
+                
+                // Загружаем посты при первой загрузке страницы
+                if (firstTabBtn && !firstTabBtn.dataset.loaded) {
+                    loadUserPosts();
+                    firstTabBtn.dataset.loaded = 'true';
+                }
+            }
         });
+
+        // Функция для загрузки постов пользователя
+        async function loadUserPosts() {
+            try {
+                const response = await fetch('/posts?user_id=' + getUserIdFromTemplate(), {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const posts = await response.json();
+                    displayUserPosts(posts);
+                } else {
+                    console.error('Ошибка при загрузке постов:', response.status);
+                    showNotification('Ошибка при загрузке постов', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке постов:', error);
+                showNotification('Ошибка соединения при загрузке постов', 'error');
+            }
+        }
+
+        // Функция для получения ID пользователя из шаблона
+        function getUserIdFromTemplate() {
+            const userDataElement = document.getElementById('user-data');
+            if (userDataElement) {
+                const userData = JSON.parse(userDataElement.textContent);
+                return userData.id;
+            }
+            return null;
+        }
+
+        // Функция для отображения постов пользователя
+        function displayUserPosts(posts) {
+            const postsList = document.querySelector('#posts-tab .posts-list');
+            
+            if (posts && posts.length > 0) {
+                let postsHtml = '';
+                
+                posts.forEach(post => {
+                    const postDate = new Date(post.created_at).toLocaleString('ru-RU');
+                    const postBodyPreview = post.body.length > 200 ? post.body.substring(0, 200) + '...' : post.body;
+                    
+                    postsHtml += `
+                        <div class="post-item">
+                            <div class="post-header">
+                                <div class="post-title">${post.header}</div>
+                                <div class="post-meta">
+                                    <span class="post-date">${postDate}</span>
+                                    <span class="post-stats">
+                                        <i class="fas fa-thumbs-up"></i> ${post.likes || 0}
+                                        <i class="fas fa-comment"></i> ${post.comments_count || 0}
+                                    </span>
+                                </div>
+                            <div class="post-body">
+                                <p>${postBodyPreview}</p>
+                            </div>
+                            <div class="post-footer">
+                                <a href="/#post-${post.id}" class="btn btn-outline btn-sm">Читать далее</a>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                postsList.innerHTML = postsHtml;
+            } else {
+                postsList.innerHTML = `
+                    <div class="no-posts-message">
+                        <i class="fas fa-inbox"></i>
+                        <h3>Пока нет постов</h3>
+                        <p>Вы еще не создали ни одного поста</p>
+                    </div>
+                `;
+            }
+        }
 
         // Функция для загрузки данных профиля с сервера (резервный вариант)
         async function loadProfileData() {
@@ -279,7 +387,17 @@
                     document.getElementById('profile-name').textContent = userData.name || 'Аноним';
                     document.getElementById('profile-email').textContent = userData.email || 'Нет email';
                     document.getElementById('username').textContent = userData.name || 'Пользователь';
-                    document.getElementById('user-role').textContent = userData.role?.name || 'Пользователь';
+                    // Определяем русское название роли
+                    const role = userData.role?.name || 'user';
+                    let roleName = 'Пользователь';
+                    if (role === 'admin') {
+                        roleName = 'Администратор';
+                    } else if (role === 'moderator') {
+                        roleName = 'Модератор';
+                    } else if (role === 'user') {
+                        roleName = 'Пользователь';
+                    }
+                    document.getElementById('user-role').textContent = roleName;
                     document.getElementById('joined-date').textContent = stats.joined_date || 'Неизвестно';
                     
                     // Обновляем аватар
