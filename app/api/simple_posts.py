@@ -1,15 +1,9 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy import insert, select
 from datetime import datetime
 
-from app.api.dependencies import DBDep, CurrentUserDep
+from app.api.dependencies import DBDep, CurrentUserDep, UserIdDep
 from app.schemes.posts import SPostAdd
-from app.models.posts import PostModel
-from app.models.users import UserModel
-from app.models.themes import ThemeModel
-from app.models.communities import CommunityModel
-from sqlalchemy.orm import selectinload, joinedload
 
 router = APIRouter(prefix="/api/v2/posts", tags=["Посты v2"])
 
@@ -18,32 +12,47 @@ router = APIRouter(prefix="/api/v2/posts", tags=["Посты v2"])
 async def create_post_v2(
     post_data: SPostAdd,
     db: DBDep,
-    current_user = Depends(CurrentUserDep),
+    current_user = UserIdDep,
 ):
     """Создание нового поста с использованием модели"""
     try:
         print(f"Создание поста: {post_data.dict()}")
-        print(f"Пользователь: {current_user.id if current_user else 'нет'}")
+        print(f"Пользователь: {current_user if current_user else 'нет'}")
 
         if not current_user:
             raise HTTPException(status_code=401, detail="Требуется авторизация")
 
-        # Создаем пост
-        post_values = {
-            "user_id": current_user.id,
-            "theme_id": post_data.theme_id,
-            "community_id": post_data.community_id,
-            "header": post_data.header,
-            "body": post_data.body,
+        # Создаем объект поста с дополнительными полями
+        from app.schemes.posts import SPostGet
+        # Используем оригинальные данные и добавляем недостающие поля
+        post_data_dict = post_data.model_dump()
+        post_data_dict.update({
+            "user_id": current_user,
             "created_at": datetime.utcnow(),
             "likes": 0,
             "dislikes": 0
-        }
+        })
+        # Обновляем community_id, если он равен 0, то делаем его None
+        if post_data_dict["community_id"] == 0:
+            post_data_dict["community_id"] = None
 
-        # Вставляем пост в базу
-        stmt = insert(PostModel).values(**post_values).returning(PostModel.id)
-        result = await db.database.execute(stmt)
-        post_id = result
+        # Альтернативный способ - создание через модель напрямую
+        from app.models.posts import PostModel
+        new_post = PostModel(
+            user_id=post_data_dict["user_id"],
+            theme_id=post_data_dict["theme_id"],
+            community_id=post_data_dict["community_id"],
+            header=post_data_dict["header"],
+            body=post_data_dict["body"],
+            created_at=post_data_dict["created_at"],
+            likes=post_data_dict["likes"],
+            dislikes=post_data_dict["dislikes"]
+        )
+        
+        db.session.add(new_post)
+        await db.session.commit()
+        await db.session.refresh(new_post)
+        post_id = new_post.id
 
         return {
             "status": "OK",
@@ -52,6 +61,7 @@ async def create_post_v2(
         }
 
     except Exception as e:
+        await db.session.rollback()
         print(f"Ошибка при создании поста: {e}")
         raise HTTPException(status_code=500, detail=f"Ошибка создания поста: {str(e)}")
 
@@ -65,31 +75,20 @@ async def get_posts_v2(
 ):
     """Получение постов с информацией о пользователях и темах"""
     try:
-        # Базовый запрос
-        query = (
-            select(PostModel)
-            .join(UserModel, PostModel.user_id == UserModel.id)
-            .join(ThemeModel, PostModel.theme_id == ThemeModel.id)
-            .options(
-                selectinload(PostModel.user),
-                selectinload(PostModel.theme)
-            )
-            .order_by(PostModel.created_at.desc())
-            .offset(skip)
-            .limit(limit)
+        # Получаем посты с фильтрацией по теме
+        posts = await db.posts.get_filtered(
+            theme_id=theme_id,
+            offset=skip,
+            limit=limit
         )
 
-        # Фильтрация по теме
-        if theme_id:
-            query = query.where(PostModel.theme_id == theme_id)
-
-        # Выполняем запрос
-        result = await db.database.execute(query)
-        posts = result.scalars().all()
-
-        # Преобразуем в словари
+        # Преобразуем в словари и добавляем информацию о пользователях и темах
         posts_list = []
         for post in posts:
+            # Получаем информацию о пользователе и теме
+            user = await db.users.get(post.user_id)
+            theme = await db.themes.get(post.theme_id)
+
             post_dict = {
                 "id": post.id,
                 "header": post.header,
@@ -100,8 +99,8 @@ async def get_posts_v2(
                 "likes": post.likes or 0,
                 "dislikes": post.dislikes or 0,
                 "created_at": post.created_at,
-                "user_name": post.user.name if post.user else "Аноним",
-                "theme_name": post.theme.name if post.theme else "Без темы"
+                "user_name": user.name if user else "Аноним",
+                "theme_name": theme.name if theme else "Без темы"
             }
             posts_list.append(post_dict)
 
@@ -121,38 +120,23 @@ async def get_posts_detailed_v2(
 ):
     """Получение постов с полной информацией"""
     try:
-        # Базовый запрос с подсчетом комментариев
-        from sqlalchemy import func
-        from app.models.comments import CommentModel
-        
-        query = (
-            select(
-                PostModel,
-                UserModel.name.label("user_name"),
-                ThemeModel.name.label("theme_name"),
-                func.count(CommentModel.id).label("comments_count")
-            )
-            .join(UserModel, PostModel.user_id == UserModel.id)
-            .join(ThemeModel, PostModel.theme_id == ThemeModel.id)
-            .outerjoin(CommentModel, PostModel.id == CommentModel.post_id)
-            .group_by(PostModel.id, UserModel.name, ThemeModel.name)
-            .order_by(PostModel.created_at.desc())
-            .offset(skip)
-            .limit(limit)
+        # Получаем посты с фильтрацией по теме
+        posts = await db.posts.get_filtered(
+            theme_id=theme_id,
+            offset=skip,
+            limit=limit
         )
 
-        # Фильтрация по теме
-        if theme_id:
-            query = query.where(PostModel.theme_id == theme_id)
-
-        # Выполняем запрос
-        result = await db.database.execute(query)
-        rows = result.all()
-
-        # Преобразуем в словари
+        # Преобразуем в словари и добавляем информацию о пользователях, темах и комментариях
         posts_list = []
-        for row in rows:
-            post, user_name, theme_name, comments_count = row
+        for post in posts:
+            # Получаем информацию о пользователе и теме
+            user = await db.users.get(post.user_id)
+            theme = await db.themes.get(post.theme_id)
+            
+            # Получаем комментарии к посту для подсчета
+            comments = await db.comments.get_filtered(post_id=post.id)
+
             post_dict = {
                 "id": post.id,
                 "header": post.header,
@@ -163,9 +147,9 @@ async def get_posts_detailed_v2(
                 "likes": post.likes or 0,
                 "dislikes": post.dislikes or 0,
                 "created_at": post.created_at,
-                "user_name": user_name or "Аноним",
-                "theme_name": theme_name or "Без темы",
-                "comments_count": comments_count or 0
+                "user_name": user.name if user else "Аноним",
+                "theme_name": theme.name if theme else "Без темы",
+                "comments_count": len(comments)
             }
             posts_list.append(post_dict)
 
@@ -184,21 +168,14 @@ async def like_post_v2(
     """Добавление лайка посту"""
     try:
         # Находим пост
-        stmt = select(PostModel).where(PostModel.id == post_id)
-        result = await db.database.execute(stmt)
-        post = result.scalar_one_or_none()
+        post = await db.posts.get(post_id)
 
         if not post:
             raise HTTPException(status_code=404, detail="Пост не найден")
 
         # Обновляем количество лайков
         new_likes = (post.likes or 0) + 1
-        update_stmt = (
-            db.posts.update()
-            .where(db.posts.c.id == post_id)
-            .values(likes=new_likes)
-        )
-        await db.database.execute(update_stmt)
+        await db.posts.edit({"likes": new_likes}, id=post_id)
 
         return {
             "status": "OK",
@@ -218,21 +195,14 @@ async def dislike_post_v2(
     """Добавление дизлайка посту"""
     try:
         # Находим пост
-        stmt = select(PostModel).where(PostModel.id == post_id)
-        result = await db.database.execute(stmt)
-        post = result.scalar_one_or_none()
+        post = await db.posts.get(post_id)
 
         if not post:
             raise HTTPException(status_code=404, detail="Пост не найден")
 
         # Обновляем количество дизлайков
         new_dislikes = (post.dislikes or 0) + 1
-        update_stmt = (
-            db.posts.update()
-            .where(db.posts.c.id == post_id)
-            .values(dislikes=new_dislikes)
-        )
-        await db.database.execute(update_stmt)
+        await db.posts.edit({"dislikes": new_dislikes}, id=post_id)
 
         return {
             "status": "OK",

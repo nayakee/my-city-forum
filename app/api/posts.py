@@ -194,3 +194,65 @@ async def get_post_comments_count(
 ) -> dict:
     comments = await db.comments.get_filtered(post_id=post_id)
     return {"count": len(comments)}
+
+
+# Endpoint'ы для веб-интерфейса с поддержкой пагинации через page/limit
+@router.get("/web", summary="Получение списка постов для веб-интерфейса (с пагинацией page/limit)")
+async def get_posts_web(
+    db: DBDep,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    theme_id: Optional[int] = None,
+    community_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+) -> list[SPostGet]:
+    skip = (page - 1) * limit
+    posts = await PostService(db).get_posts(
+        skip=skip,
+        limit=limit,
+        theme_id=theme_id,
+        community_id=community_id,
+        user_id=user_id
+    )
+    return posts
+
+
+@router.get("/web/detailed", summary="Получение постов с детальной информацией для веб-интерфейса (с пагинацией page/limit)")
+async def get_posts_detailed_web(
+    db: DBDep,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    theme_id: Optional[int] = None,
+    community_id: Optional[int] = None,
+) -> list[dict]:
+    skip = (page - 1) * limit
+    posts = await PostService(db).get_posts_with_details(
+        skip=skip,
+        limit=limit,
+        theme_id=theme_id,
+        community_id=community_id
+    )
+    
+    # Преобразуем результат в словари
+    result = []
+    for post, user_name, theme_name, community_name, comments_count in posts:
+        post_dict = {
+            "id": post.id,
+            "header": post.header,
+            "body": post.body,
+            "theme_id": post.theme_id,
+            "community_id": post.community_id,
+            "user_id": post.user_id,
+            "is_published": post.is_published,
+            "likes": post.likes,
+            "dislikes": post.dislikes,
+            "created_at": post.created_at,
+            "updated_at": post.updated_at,
+            "user_name": user_name,
+            "theme_name": theme_name,
+            "community_name": community_name,
+            "comments_count": comments_count
+        }
+        result.append(post_dict)
+    
+    return result

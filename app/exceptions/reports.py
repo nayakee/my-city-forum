@@ -1,8 +1,12 @@
 from fastapi import HTTPException, status
+from app.exceptions.base import MyAppError
 
 
-class ReportNotFoundError(Exception):
-    pass
+class ReportNotFoundError(MyAppError):
+    detail = "Жалоба не найдена"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class ReportNotFoundHTTPError(HTTPException):
@@ -25,8 +29,11 @@ class ReportAccessDeniedHTTPError(HTTPException):
         )
 
 
-class ContentNotFoundError(Exception):
-    pass
+class ContentNotFoundError(MyAppError):
+    detail = "Контент не найден"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class ContentNotFoundHTTPError(HTTPException):
@@ -37,8 +44,11 @@ class ContentNotFoundHTTPError(HTTPException):
         )
 
 
-class DuplicateReportError(Exception):
-    pass
+class DuplicateReportError(MyAppError):
+    detail = "Вы уже отправляли жалобу на этот контент"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class DuplicateReportHTTPError(HTTPException):
@@ -49,8 +59,11 @@ class DuplicateReportHTTPError(HTTPException):
         )
 
 
-class OnlyModeratorAccessError(Exception):
-    pass
+class OnlyModeratorAccessError(MyAppError):
+    detail = "Только модераторы могут выполнять это действие"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class OnlyModeratorAccessHTTPError(HTTPException):

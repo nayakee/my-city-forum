@@ -1,16 +1,18 @@
-from app.exceptions.base import BaseAppException
+from app.exceptions.base import MyAppError
 
 
-class UserNotFoundError(BaseAppException):
-    @property
-    def message(self) -> str:
-        return "Пользователь не найден"
+class UserNotFoundError(MyAppError):
+    detail = "Пользователь не найден"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
-class UserAlreadyExistsError(BaseAppException):
-    @property
-    def message(self) -> str:
-        return "Пользователь с такими данными уже существует"
+class UserAlreadyExistsError(MyAppError):
+    detail = "Пользователь с такими данными уже существует"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 # HTTP-исключения

@@ -1,8 +1,12 @@
 from fastapi import HTTPException, status
+from app.exceptions.base import MyAppError
 
 
-class PostNotFoundError(Exception):
-    pass
+class PostNotFoundError(MyAppError):
+    detail = "Пост не найден"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class PostNotFoundHTTPError(HTTPException):
@@ -25,8 +29,11 @@ class PostAccessDeniedHTTPError(HTTPException):
         )
 
 
-class PostAlreadyExistsError(Exception):
-    pass
+class PostAlreadyExistsError(MyAppError):
+    detail = "Пост с таким заголовком уже существует"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class PostAlreadyExistsHTTPError(HTTPException):
