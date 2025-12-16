@@ -1,4 +1,6 @@
-// Система уведомлений
+// ====================================================
+// СИСТЕМА УВЕДОМЛЕНИЙ
+// ====================================================
 class NotificationSystem {
     constructor() {
         this.container = null;
@@ -323,3 +325,5 @@ window.notify = new NotificationSystem();
 window.showSuccess = (message, duration) => notify.success(message, duration);
 window.showError = (message, duration) => notify.error(message, duration);
 window.showInfo = (message, duration) => notify.info(message, duration);
+
+console.log('notifications.js загружен');
