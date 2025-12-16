@@ -1,8 +1,12 @@
 from fastapi import HTTPException, status
+from app.exceptions.base import MyAppError
 
 
-class CommunityNotFoundError(Exception):
-    pass
+class CommunityNotFoundError(MyAppError):
+    detail = "Сообщество не найдено"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class CommunityNotFoundHTTPError(HTTPException):
@@ -13,8 +17,11 @@ class CommunityNotFoundHTTPError(HTTPException):
         )
 
 
-class CommunityAlreadyExistsError(Exception):
-    pass
+class CommunityAlreadyExistsError(MyAppError):
+    detail = "Сообщество с таким названием уже существует"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class CommunityAlreadyExistsHTTPError(HTTPException):

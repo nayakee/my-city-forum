@@ -49,9 +49,9 @@ class BaseRepository(Generic[T]):
 
         return result
 
-    async def get_all(self, *args, **kwargs) -> list[T]:
+    async def get_all(self) -> list[T]:
         """Возращает все записи в БД из связаной таблицы"""
-        return await self.get_filtered(*args, **kwargs)
+        return await self.get_filtered()
 
     async def get_one_or_none(self, **filter_by) -> None | T:
         query = select(self.model)

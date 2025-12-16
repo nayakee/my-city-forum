@@ -84,7 +84,7 @@ class CommentService:
             post = await self.db.posts.get(comment.post_id)
             
             comment_dict = comment.__dict__.copy()
-            comment_dict["user_name"] = user.username if user else "Unknown"
+            comment_dict["user_name"] = user.name if user else "Unknown"
             comment_dict["post_header"] = post.header if post else "Unknown"
             result.append(comment_dict)
         

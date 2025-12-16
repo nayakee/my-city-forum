@@ -5,11 +5,22 @@ from app.models.reports import ReportModel, ReportStatusEnum
 from app.repositories.base import BaseRepository
 
 
-class ReportsRepository(BaseRepository[ReportModel]):
+from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, desc
+
+from app.models.reports import ReportModel
+from app.repositories.base import BaseRepository
+from app.schemes.reports import SReportGet
+
+
+class ReportsRepository(BaseRepository):
     """Репозиторий для работы с жалобами"""
     
+    model = ReportModel
+    schema = SReportGet
+    
     def __init__(self, session: AsyncSession):
-        self.model = ReportModel
         self.session = session
 
     async def get_by_status(

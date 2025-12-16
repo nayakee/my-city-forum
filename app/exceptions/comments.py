@@ -1,8 +1,12 @@
 from fastapi import HTTPException, status
+from app.exceptions.base import MyAppError
 
 
-class CommentNotFoundError(Exception):
-    pass
+class CommentNotFoundError(MyAppError):
+    detail = "Комментарий не найден"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class CommentNotFoundHTTPError(HTTPException):
@@ -13,8 +17,11 @@ class CommentNotFoundHTTPError(HTTPException):
         )
 
 
-class CommentAccessDeniedError(Exception):
-    pass
+class CommentAccessDeniedError(MyAppError):
+    detail = "Нет доступа к комментарию"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class CommentAccessDeniedHTTPError(HTTPException):
@@ -25,8 +32,11 @@ class CommentAccessDeniedHTTPError(HTTPException):
         )
 
 
-class CommentToDeletedPostError(Exception):
-    pass
+class CommentToDeletedPostError(MyAppError):
+    detail = "Нельзя добавить комментарий к удаленному посту"
+    
+    def __init__(self, detail=None):
+        super().__init__(detail)
 
 
 class CommentToDeletedPostHTTPError(HTTPException):

@@ -5,11 +5,22 @@ from app.models.posts import PostModel
 from app.repositories.base import BaseRepository
 
 
-class PostsRepository(BaseRepository[PostModel]):
+from typing import Optional, List
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, desc, func
+
+from app.models.posts import PostModel
+from app.repositories.base import BaseRepository
+from app.schemes.posts import SPostGet
+
+
+class PostsRepository(BaseRepository):
     """Репозиторий для работы с постами"""
     
+    model = PostModel
+    schema = SPostGet
+    
     def __init__(self, session: AsyncSession):
-        self.model = PostModel
         self.session = session
 
     async def get_by_user(

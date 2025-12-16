@@ -7,11 +7,24 @@ from app.models.posts import PostModel
 from app.repositories.base import BaseRepository
 
 
-class ThemesRepository(BaseRepository[ThemeModel]):
+from typing import Optional, List, Dict, Any
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, desc, func, text
+from sqlalchemy.orm import selectinload
+
+from app.models.themes import ThemeModel
+from app.models.posts import PostModel
+from app.repositories.base import BaseRepository
+from app.schemes.themes import SThemeGet
+
+
+class ThemesRepository(BaseRepository):
     """Репозиторий для работы с темами"""
     
+    model = ThemeModel
+    schema = SThemeGet
+    
     def __init__(self, session: AsyncSession):
-        self.model = ThemeModel
         self.session = session
 
     async def get_by_name(self, name: str) -> Optional[ThemeModel]:

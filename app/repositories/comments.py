@@ -5,11 +5,22 @@ from app.models.comments import CommentModel
 from app.repositories.base import BaseRepository
 
 
-class CommentsRepository(BaseRepository[CommentModel]):
+from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, desc
+
+from app.models.comments import CommentModel
+from app.repositories.base import BaseRepository
+from app.schemes.comments import SCommentGet
+
+
+class CommentsRepository(BaseRepository):
     """Репозиторий для работы с комментариями"""
     
+    model = CommentModel
+    schema = SCommentGet
+    
     def __init__(self, session: AsyncSession):
-        self.model = CommentModel
         self.session = session
 
     async def get_by_post(
