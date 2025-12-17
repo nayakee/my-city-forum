@@ -212,3 +212,37 @@ async def dislike_post_v2(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{post_id}", summary="Удаление поста")
+async def delete_post_v2(
+    post_id: int,
+    db: DBDep,
+    current_user: int = Depends(get_current_user_id),
+):
+    """Удаление поста текущим пользователем"""
+    try:
+        # Находим пост
+        post = await db.posts.get(post_id)
+
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+
+        # Проверяем, является ли текущий пользователь владельцем поста
+        if post.user_id != current_user:
+            raise HTTPException(status_code=403, detail="Нет прав на удаление этого поста")
+
+        # Удаляем пост
+        await db.posts.delete(id=post_id)
+
+        return {
+            "status": "OK",
+            "message": "Пост успешно удален"
+        }
+
+    except HTTPException:
+        # Перебрасываем HTTP исключения дальше
+        raise
+    except Exception as e:
+        print(f"Ошибка при удалении поста: {e}")
+        raise HTTPException(status_code=500, detail=f"Ошибка удаления поста: {str(e)}")

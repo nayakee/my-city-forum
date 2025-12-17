@@ -6,6 +6,133 @@
     <title>Профиль пользователя - Мой Город</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Стили для карусели сообществ */
+        .communities-carousel {
+            margin-top: 20px;
+        }
+        
+        .carousel-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+        
+        .carousel-track {
+            display: flex;
+            gap: 15px;
+            transition: transform 0.3s ease;
+            padding: 10px 5px;
+        }
+        
+        .community-card-carousel {
+            flex: 0 0 180px;
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e0e0e0;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .community-card-carousel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            text-decoration: none;
+        }
+        
+        .community-icon {
+            width: 40px;
+            height: 40px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .community-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .community-stats-small {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        
+        .carousel-nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .carousel-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .carousel-btn:hover {
+            background: #f5f5f5;
+            border-color: #4CAF50;
+        }
+        
+        .carousel-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        
+        .carousel-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ddd;
+            cursor: pointer;
+        }
+        
+        .carousel-dot.active {
+            background: #4CAF50;
+        }
+        
+        /* Адаптивность для карусели */
+        @media (max-width: 768px) {
+            .community-card-carousel {
+                flex: 0 0 160px;
+            }
+            
+            .carousel-track {
+                gap: 12px;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Шапка -->
@@ -63,86 +190,121 @@
     <!-- Основной контент -->
     <main class="container">
         <div class="profile-container">
-            <div class="profile-header">
-                <div class="profile-avatar">
-                    <img id="profile-avatar" src="" alt="Аватар" />
-                </div>
-                <div class="profile-info">
-                    <h1 id="profile-name">Загрузка...</h1>
-                    <p id="profile-email">Загрузка...</p>
-                    <div class="profile-stats">
-                        <div class="stat-item">
-                            <span class="stat-value" id="posts-count">0</span>
-                            <span class="stat-label">Постов</span>
+            <div class="profile-layout">
+                <!-- Левая часть - основная информация -->
+                <div class="profile-main">
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            <img id="profile-avatar" src="" alt="Аватар" />
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="comments-count">0</span>
-                            <span class="stat-label">Комментариев</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="likes-received">0</span>
-                            <span class="stat-label">Лайков</span>
-                        </div>
-                    </div>
-                    <div class="profile-meta">
-                        <span class="meta-item">
-                            <i class="fas fa-calendar"></i>
-                            Регистрация: <span id="joined-date">-</span>
-                        </span>
-                        <span class="meta-item">
-                            <i class="fas fa-user-tag"></i>
-                            Роль: <span id="user-role">-</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="profile-content">
-                <div class="profile-tabs">
-                    <button class="tab-btn active" data-tab="posts">Мои посты</button>
-                    <button class="tab-btn" data-tab="comments">Мои комментарии</button>
-                </div>
-
-                <div class="tab-content">
-
-                    <div id="posts-tab" class="tab-pane">
-                        <div class="posts-list">
-                            {% if user_posts %}
-                                {% for post in user_posts %}
-                                    <div class="post-item">
-                                        <div class="post-header">
-                                            <div class="post-title">{{ post.header }}</div>
-                                            <div class="post-meta">
-                                                <span class="post-date">{{ post.created_at.strftime('%d.%m.%Y %H:%M') if post.created_at else 'Дата не указана' }}</span>
-                                                <span class="post-stats">
-                                                    <i class="fas fa-thumbs-up"></i> {{ post.likes or 0 }}
-                                                    <i class="fas fa-comment"></i> {{ post.comments_count or 0 }}
-                                                </span>
-                                            </div>
-                                        <div class="post-body">
-                                            <p>{{ post.body[:200] }}{% if post.body|length > 200 %}...{% endif %}</p>
-                                        </div>
-                                        <div class="post-footer">
-                                            <a href="/#post-{{ post.id }}" class="btn btn-outline btn-sm">Читать далее</a>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="no-posts-message">
-                                    <i class="fas fa-inbox"></i>
-                                    <h3>Пока нет постов</h3>
-                                    <p>Вы еще не создали ни одного поста</p>
+                        <div class="profile-info">
+                            <h1 id="profile-name">Загрузка...</h1>
+                            <p id="profile-email">Загрузка...</p>
+                            <div class="profile-stats">
+                                <div class="stat-item">
+                                    <span class="stat-value" id="posts-count">0</span>
+                                    <span class="stat-label">Постов</span>
                                 </div>
-                            {% endif %}
+                                <div class="stat-item">
+                                    <span class="stat-value" id="comments-count">0</span>
+                                    <span class="stat-label">Комментариев</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="likes-received">0</span>
+                                    <span class="stat-label">Лайков</span>
+                                </div>
+                            </div>
+                            <div class="profile-meta">
+                                <span class="meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    Регистрация: <span id="joined-date">-</span>
+                                </span>
+                                <span class="meta-item">
+                                    <i class="fas fa-user-tag"></i>
+                                    Роль: <span id="user-role">-</span>
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    <div id="comments-tab" class="tab-pane">
-                        <div class="comments-list">
-                            <div class="no-comments-message">
-                                <i class="fas fa-comments"></i>
-                                <h3>Пока нет комментариев</h3>
-                                <p>Вы еще не оставили ни одного комментария</p>
+                    <div class="profile-content">
+                        <div class="profile-tabs">
+                            <button class="tab-btn active" data-tab="posts">Мои посты</button>
+                            <button class="tab-btn" data-tab="comments">Мои комментарии</button>
+                            <button class="tab-btn" data-tab="communities">Мои сообщества</button>
+                        </div>
+
+                        <div class="tab-content">
+                            <div id="posts-tab" class="tab-pane active">
+                                <div class="posts-list">
+                                    {% if user_posts %}
+                                        {% for post in user_posts %}
+                                            <div class="post-item">
+                                                <div class="post-header">
+                                                    <div class="post-title">{{ post.header }}</div>
+                                                    <div class="post-meta">
+                                                        <span class="post-date">{{ post.created_at.strftime('%d.%m.%Y %H:%M') if post.created_at else 'Дата не указана' }}</span>
+                                                        <span class="post-stats">
+                                                            <i class="fas fa-thumbs-up"></i> {{ post.likes or 0 }}
+                                                            <i class="fas fa-comment"></i> {{ post.comments_count or 0 }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="post-body">
+                                                    <p>{{ post.body[:200] }}{% if post.body|length > 200 %}...{% endif %}</p>
+                                                </div>
+                                                <div class="post-footer">
+                                                    <a href="/#post-{{ post.id }}" class="btn btn-outline btn-sm">Читать далее</a>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="no-posts-message">
+                                            <i class="fas fa-inbox"></i>
+                                            <h3>Пока нет постов</h3>
+                                            <p>Вы еще не создали ни одного поста</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div id="comments-tab" class="tab-pane">
+                                <div class="comments-list">
+                                    <div class="no-comments-message">
+                                        <i class="fas fa-comments"></i>
+                                        <h3>Пока нет комментариев</h3>
+                                        <p>Вы еще не оставили ни одного комментария</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="communities-tab" class="tab-pane">
+                                <div class="communities-list-full" id="user-communities-list-full">
+                                    <div class="loading-spinner">Загрузка сообществ...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Правая часть - карусель сообществ -->
+                <div class="profile-sidebar">
+                    <div class="communities-carousel">
+                        <h3><i class="fas fa-users"></i> Мои сообщества</h3>
+                        <div class="carousel-container" id="carousel-container">
+                            <div class="carousel-track" id="carousel-track">
+                                <!-- Сообщества будут загружены сюда -->
+                                <div class="loading-spinner">Загрузка...</div>
+                            </div>
+                            
+                            <div class="carousel-nav">
+                                <button class="carousel-btn" id="carousel-prev" disabled>
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <div class="carousel-dots" id="carousel-dots"></div>
+                                <button class="carousel-btn" id="carousel-next">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -167,6 +329,7 @@
                         <a href="/web/communities">Сообщества</a>
                         <a href="#">Правила</a>
                     </div>
+                </div>
                 <div class="footer-section">
                     <h3>Контакты</h3>
                     <div class="footer-links">
@@ -188,10 +351,12 @@
     <!-- Скрытый элемент для передачи данных пользователя из шаблона -->
     <script id="user-data" type="application/json">
         {
-            "name": "{{ user.name if user else '' }}",
-            "email": "{{ user.email if user else '' }}",
-            "role": {{ user.role.dict() | tojson if user and user.role else 'null' }},
+            "id": {{ user.id | tojson if user else 'null' }},
+            "name": {{ user.name | tojson if user else '""' }},
+            "email": {{ user.email | tojson if user else '""' }},
+            "role": {{ user.role | tojson if user and user.role else 'null' }},
             "created_at": {{ user.created_at.isoformat() | tojson if user and user.created_at else 'null' }},
+            "communities": {{ user.communities | tojson if user and user.communities else '[]' }},
             "stats": {{ stats | tojson if stats else '{}' }}
         }
     </script>
@@ -250,6 +415,26 @@
                     document.getElementById('posts-count').textContent = stats.posts_count || 0;
                     document.getElementById('comments-count').textContent = stats.comments_count || 0;
                     document.getElementById('likes-received').textContent = stats.likes_received || 0;
+                    
+                    // Отображаем сообщества пользователя в карусели
+                    if (userData.communities && userData.communities.length > 0) {
+                        displayUserCommunitiesCarousel(userData.communities);
+                        displayUserCommunitiesFull(userData.communities); // Для вкладки "Мои сообщества"
+                    } else {
+                        document.getElementById('carousel-track').innerHTML = `
+                            <div class="no-communities-message">
+                                <i class="fas fa-users"></i>
+                                <p>Вы еще не состоите ни в одном сообществе</p>
+                            </div>
+                        `;
+                        document.getElementById('user-communities-list-full').innerHTML = `
+                            <div class="no-communities-message">
+                                <i class="fas fa-users"></i>
+                                <h3>Нет сообществ</h3>
+                                <p>Вы еще не состоите ни в одном сообществе</p>
+                            </div>
+                        `;
+                    }
                 } else {
                     // Если данные не были переданы, пробуем загрузить их с сервера
                     loadProfileData();
@@ -278,6 +463,12 @@
                         loadUserPosts();
                         this.dataset.loaded = 'true';
                     }
+                    
+                    // Если переключаемся на вкладку "мои сообщества" и она пуста, загружаем сообщества
+                    if (tabId === 'communities' && !this.dataset.loaded) {
+                        loadUserCommunities();
+                        this.dataset.loaded = 'true';
+                    }
                 });
             });
             
@@ -296,6 +487,190 @@
             }
         });
 
+        // Переменные для управления каруселью
+        let currentSlide = 0;
+        let slidesPerView = 3;
+        let totalSlides = 0;
+        let communitiesData = [];
+
+        // Функция для отображения сообществ в карусели
+        function displayUserCommunitiesCarousel(communities) {
+            const carouselTrack = document.getElementById('carousel-track');
+            communitiesData = communities;
+            
+            if (communities && communities.length > 0) {
+                let communitiesHtml = '';
+                
+                communities.forEach((community, index) => {
+                    const iconClass = getCommunityIcon(community.name || community.type || 'community');
+                    
+                    communitiesHtml += `
+                        <a href="/web/communities/${community.id}" class="community-card-carousel" data-index="${index}">
+                            <div class="community-icon">
+                                <i class="${iconClass}"></i>
+                            </div>
+                            <div class="community-name">${community.name}</div>
+                            <div class="community-stats-small">
+                                <span><i class="fas fa-comment"></i> ${community.posts_count || 0} постов</span>
+                                <span><i class="fas fa-user-friends"></i> ${community.members_count || 0} участников</span>
+                            </div>
+                        </a>
+                    `;
+                });
+                
+                carouselTrack.innerHTML = communitiesHtml;
+                
+                // Инициализируем карусель
+                initCarousel();
+            } else {
+                carouselTrack.innerHTML = `
+                    <div class="no-communities-message">
+                        <i class="fas fa-users"></i>
+                        <p>Вы еще не состоите ни в одном сообществе</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Функция для отображения сообществ в полном виде (для вкладки)
+        function displayUserCommunitiesFull(communities) {
+            const communitiesList = document.getElementById('user-communities-list-full');
+            
+            if (communities && communities.length > 0) {
+                let communitiesHtml = '<div class="communities-grid">';
+                
+                communities.forEach(community => {
+                    communitiesHtml += `
+                        <div class="community-card">
+                            <div class="community-header">
+                                <h3>${community.name}</h3>
+                            </div>
+                            <div class="community-stats">
+                                <span class="stat"><i class="fas fa-comment"></i> ${community.posts_count || 0} постов</span>
+                                <span class="stat"><i class="fas fa-user-friends"></i> ${community.members_count || 0} участников</span>
+                            </div>
+                            <div class="community-actions">
+                                <a href="/web/communities/${community.id}" class="btn btn-outline btn-sm">Перейти</a>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                communitiesHtml += '</div>';
+                communitiesList.innerHTML = communitiesHtml;
+            } else {
+                communitiesList.innerHTML = `
+                    <div class="no-communities-message">
+                        <i class="fas fa-users"></i>
+                        <h3>Нет сообществ</h3>
+                        <p>Вы еще не состоите ни в одном сообществе</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Функция для получения иконки сообщества
+        function getCommunityIcon(communityName) {
+            const name = communityName.toLowerCase();
+            if (name.includes('дом') || name.includes('жил')) return 'fas fa-home';
+            if (name.includes('двор') || name.includes('детск')) return 'fas fa-child';
+            if (name.includes('парк') || name.includes('зелен')) return 'fas fa-tree';
+            if (name.includes('дорог') || name.includes('транспорт')) return 'fas fa-car';
+            if (name.includes('школ') || name.includes('образов')) return 'fas fa-graduation-cap';
+            if (name.includes('больниц') || name.includes('медиц')) return 'fas fa-hospital';
+            if (name.includes('торгов') || name.includes('магазин')) return 'fas fa-shopping-cart';
+            if (name.includes('культур') || name.includes('досуг')) return 'fas fa-theater-masks';
+            if (name.includes('спорт') || name.includes('фитнес')) return 'fas fa-dumbbell';
+            return 'fas fa-users';
+        }
+
+        // Инициализация карусели
+        function initCarousel() {
+            const track = document.getElementById('carousel-track');
+            const prevBtn = document.getElementById('carousel-prev');
+            const nextBtn = document.getElementById('carousel-next');
+            const dotsContainer = document.getElementById('carousel-dots');
+            
+            const items = track.querySelectorAll('.community-card-carousel');
+            totalSlides = items.length;
+            
+            // Рассчитываем сколько элементов помещается в видимой области
+            updateSlidesPerView();
+            
+            // Создаем точки навигации
+            updateDots();
+            
+            // Обработчики кнопок
+            prevBtn.addEventListener('click', () => {
+                currentSlide = Math.max(currentSlide - 1, 0);
+                updateCarousel();
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                currentSlide = Math.min(currentSlide + 1, Math.ceil(totalSlides / slidesPerView) - 1);
+                updateCarousel();
+            });
+            
+            // Обработчик изменения размера окна
+            window.addEventListener('resize', updateSlidesPerView);
+            
+            // Обновление карусели
+            function updateCarousel() {
+                const itemWidth = items[0] ? items[0].offsetWidth + 15 : 195; // 180px + gap 15px
+                const translateX = -currentSlide * slidesPerView * itemWidth;
+                track.style.transform = `translateX(${translateX}px)`;
+                
+                // Обновляем состояние кнопок
+                prevBtn.disabled = currentSlide === 0;
+                nextBtn.disabled = currentSlide >= Math.ceil(totalSlides / slidesPerView) - 1;
+                
+                // Обновляем активную точку
+                updateActiveDot();
+            }
+            
+            // Обновление количества видимых слайдов
+            function updateSlidesPerView() {
+                const containerWidth = document.getElementById('carousel-container').offsetWidth;
+                if (containerWidth < 400) {
+                    slidesPerView = 1;
+                } else if (containerWidth < 600) {
+                    slidesPerView = 2;
+                } else {
+                    slidesPerView = 3;
+                }
+                updateCarousel();
+            }
+            
+            // Обновление точек навигации
+            function updateDots() {
+                dotsContainer.innerHTML = '';
+                const dotsCount = Math.ceil(totalSlides / slidesPerView);
+                
+                for (let i = 0; i < dotsCount; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'carousel-dot';
+                    if (i === 0) dot.classList.add('active');
+                    dot.addEventListener('click', () => {
+                        currentSlide = i;
+                        updateCarousel();
+                    });
+                    dotsContainer.appendChild(dot);
+                }
+            }
+            
+            // Обновление активной точки
+            function updateActiveDot() {
+                const dots = dotsContainer.querySelectorAll('.carousel-dot');
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('active', index === currentSlide);
+                });
+            }
+            
+            // Инициализируем карусель
+            updateCarousel();
+        }
+
+        // Остальные функции остаются без изменений...
         // Функция для загрузки постов пользователя
         async function loadUserPosts() {
             try {
@@ -327,47 +702,41 @@
             return null;
         }
 
-        // Функция для отображения постов пользователя
-        function displayUserPosts(posts) {
-            const postsList = document.querySelector('#posts-tab .posts-list');
-            
-            if (posts && posts.length > 0) {
-                let postsHtml = '';
-                
-                posts.forEach(post => {
-                    const postDate = new Date(post.created_at).toLocaleString('ru-RU');
-                    const postBodyPreview = post.body.length > 200 ? post.body.substring(0, 200) + '...' : post.body;
-                    
-                    postsHtml += `
-                        <div class="post-item">
-                            <div class="post-header">
-                                <div class="post-title">${post.header}</div>
-                                <div class="post-meta">
-                                    <span class="post-date">${postDate}</span>
-                                    <span class="post-stats">
-                                        <i class="fas fa-thumbs-up"></i> ${post.likes || 0}
-                                        <i class="fas fa-comment"></i> ${post.comments_count || 0}
-                                    </span>
-                                </div>
-                            <div class="post-body">
-                                <p>${postBodyPreview}</p>
-                            </div>
-                            <div class="post-footer">
-                                <a href="/#post-${post.id}" class="btn btn-outline btn-sm">Читать далее</a>
-                            </div>
-                        </div>
-                    `;
+        // Функция для загрузки сообществ пользователя
+        async function loadUserCommunities() {
+            try {
+                const response = await fetch('/auth/me', {
+                    method: 'GET',
+                    credentials: 'include'
                 });
                 
-                postsList.innerHTML = postsHtml;
-            } else {
-                postsList.innerHTML = `
-                    <div class="no-posts-message">
-                        <i class="fas fa-inbox"></i>
-                        <h3>Пока нет постов</h3>
-                        <p>Вы еще не создали ни одного поста</p>
-                    </div>
-                `;
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData.communities && userData.communities.length > 0) {
+                        displayUserCommunitiesCarousel(userData.communities);
+                        displayUserCommunitiesFull(userData.communities);
+                    } else {
+                        document.getElementById('carousel-track').innerHTML = `
+                            <div class="no-communities-message">
+                                <i class="fas fa-users"></i>
+                                <p>Вы еще не состоите ни в одном сообществе</p>
+                            </div>
+                        `;
+                        document.getElementById('user-communities-list-full').innerHTML = `
+                            <div class="no-communities-message">
+                                <i class="fas fa-users"></i>
+                                <h3>Нет сообществ</h3>
+                                <p>Вы еще не состоите ни в одном сообществе</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    console.error('Ошибка при загрузке сообществ:', response.status);
+                    showNotification('Ошибка при загрузке сообществ', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке сообществ:', error);
+                showNotification('Ошибка соединения при загрузке сообществ', 'error');
             }
         }
 
@@ -409,6 +778,26 @@
                     document.getElementById('posts-count').textContent = stats.posts_count || 0;
                     document.getElementById('comments-count').textContent = stats.comments_count || 0;
                     document.getElementById('likes-received').textContent = stats.likes_received || 0;
+                    
+                    // Отображаем сообщества пользователя
+                    if (userData.communities && userData.communities.length > 0) {
+                        displayUserCommunitiesCarousel(userData.communities);
+                        displayUserCommunitiesFull(userData.communities);
+                    } else {
+                        document.getElementById('carousel-track').innerHTML = `
+                            <div class="no-communities-message">
+                                <i class="fas fa-users"></i>
+                                <p>Вы еще не состоите ни в одном сообществе</p>
+                            </div>
+                        `;
+                        document.getElementById('user-communities-list-full').innerHTML = `
+                            <div class="no-communities-message">
+                                <i class="fas fa-users"></i>
+                                <h3>Нет сообществ</h3>
+                                <p>Вы еще не состоите ни в одном сообществе</p>
+                            </div>
+                        `;
+                    }
                 } else {
                     // Если пользователь не авторизован, перенаправляем
                     window.location.href = '/web/auth';

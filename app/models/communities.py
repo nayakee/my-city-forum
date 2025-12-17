@@ -15,6 +15,7 @@ class CommunityModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), unique=False, nullable=False)
     description: Mapped[str] = mapped_column(String(255), unique=False, nullable=False)
+    image: Mapped[str] = mapped_column(String(255), unique=False, nullable=True, default=None)
 
     posts_count: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
     members_count: Mapped[int] = mapped_column(Integer, default=0, nullable=True)

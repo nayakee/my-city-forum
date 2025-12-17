@@ -12,6 +12,7 @@ from app.exceptions.posts import (
     PostAccessDeniedError,
     PostAlreadyExistsError
 )
+from app.services.comments import CommentService
 
 
 class PostService:
@@ -226,3 +227,25 @@ class PostService:
             result.append(post_dict)
             
         return result
+
+    async def get_post_with_comments(self, post_id: int) -> Optional[dict]:
+        """Получение поста с комментариями по ID"""
+        post = await self.get_post(post_id)
+        if not post:
+            return None
+            
+        # Получаем дополнительную информацию о посте
+        user = await self.db.users.get(post.user_id)
+        theme = await self.db.themes.get(post.theme_id)
+        community = await self.db.communities.get(post.community_id) if post.community_id else None
+        
+        # Получаем комментарии к посту
+        comments = await CommentService(self.db).get_comments_with_details(post_id=post_id)
+        
+        post_data = post.__dict__.copy()
+        post_data["user_name"] = user.name if user else "Unknown"
+        post_data["theme_name"] = theme.name if theme else "Unknown"
+        post_data["community_name"] = community.name if community else "Unknown"
+        post_data["comments"] = comments
+        
+        return post_data

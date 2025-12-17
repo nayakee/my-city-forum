@@ -10,7 +10,7 @@ from app.exceptions.auth import (
     InvalidPasswordError,
     InvalidPasswordHTTPError,
 )
-from app.schemes.users import SUserAddRequest, SUserAuth
+from app.schemes.users import SUserAddRequest, SUserAuth, SUserGetWithRelsAndCommunities
 from app.schemes.relations_users_roles import SUserGetWithRels
 from app.services.auth import AuthService
 
@@ -46,9 +46,9 @@ async def login_user(
 
 
 @router.get("/me", summary="Получение текущего пользователя для профиля")
-async def get_me(db: DBDep, user_id: UserIdDep) -> SUserGetWithRels | None:
+async def get_me(db: DBDep, user_id: UserIdDep) -> SUserGetWithRelsAndCommunities | None:
     try:
-        user: None | SUserGetWithRels = await AuthService(db).get_me(user_id)
+        user: None | SUserGetWithRelsAndCommunities = await AuthService(db).get_me(user_id)
     except UserNotFoundError:
         raise UserNotFoundHTTPError
     return user

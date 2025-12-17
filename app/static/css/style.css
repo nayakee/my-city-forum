@@ -94,10 +94,23 @@ a:hover {
     margin-top: 1.5rem;
 }
 
+@media (min-width: 993px) {
+    .main-grid.post-detail-page {
+        grid-template-columns: 1fr; /* Для страницы деталей поста - только центральный контент */
+        max-width: 800px; /* Ограничиваем ширину и центрируем */
+        margin: 1.5rem auto;
+        padding: 0 20px;
+    }
+}
+
 @media (max-width: 992px) {
     .main-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
+    }
+    
+    .main-grid.post-detail-page {
+        margin: 1.5rem auto;
     }
 }
 
@@ -243,23 +256,33 @@ a:hover {
 }
 
 .theme-filter.news {
-    background: #e8f5e8;
-    color: #2e7d32;
-    border-color: #c8e6c9;
+    background: #e3f2fd;
+    color: #2196F3;
+    border-color: #bbdefb;
 }
 
 .theme-filter.news.active {
-    background: #2e7d32;
+    background: #2196F3;
 }
 
 .theme-filter.realestate {
-    background: #f1f8e9;
-    color: #689f38;
-    border-color: #dcedc8;
+    background: #fff8e1;
+    color: #FFC107;
+    border-color: #ffecb3;
 }
 
 .theme-filter.realestate.active {
-    background: #689f38;
+    background: #FFC107;
+}
+
+.theme-filter.job {
+    background: #efebe9;
+    color: #795548;
+    border-color: #d7ccc8;
+}
+
+.theme-filter.job.active {
+    background: #795548;
 }
 
 .theme-filter.transport {
@@ -413,7 +436,81 @@ a:hover {
     box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
 }
 
-/* 9. ФОРМЫ */
+/* 9. КНОПКИ - ЗЕЛЕНЫЙ СТИЛЬ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0.625rem 1.25rem;
+    border-radius: 10px;
+    font-weight: 60;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.01em;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1b5e20 0%, #388e3c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(46, 125, 50, 0.25);
+}
+
+.btn-outline {
+    background: transparent;
+    color: #2e7d32;
+    border: 2px solid #2e7d32;
+}
+
+.btn-outline:hover {
+    background: #2e7d32;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.15);
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(100, 116, 139, 0.25);
+}
+
+/* 10. ФОРМЫ */
 .form-group {
     margin-bottom: 1rem;
 }
@@ -512,13 +609,18 @@ textarea.form-control {
 }
 
 .post.news {
-    border-left-color: #2e7d32;
-    color: #2e7d32;
+    border-left-color: #2196F3;
+    color: #2196F3;
 }
 
 .post.realestate {
-    border-left-color: #689f38;
-    color: #689f38;
+    border-left-color: #FFC107;
+    color: #FFC107;
+}
+
+.post.job {
+    border-left-color: #795548;
+    color: #795548;
 }
 
 .post.transport {
@@ -580,13 +682,18 @@ textarea.form-control {
 }
 
 .post-theme.news {
-    background: #e8f5e8;
-    color: #2e7d32;
+    background: #e3f2fd;
+    color: #2196F3;
 }
 
 .post-theme.realestate {
-    background: #f1f8e9;
-    color: #689f38;
+    background: #fff8e1;
+    color: #FFC107;
+}
+
+.post-theme.job {
+    background: #efebe9;
+    color: #795548;
 }
 
 .post-theme.transport {
@@ -668,9 +775,9 @@ textarea.form-control {
 }
 
 .vote-btn.dislike:hover {
-    background: #ffebee;
-    border-color: #ffcdd2;
-    color: #d32f2f;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #dc2626;
 }
 
 .vote-btn.active-like {
@@ -680,9 +787,9 @@ textarea.form-control {
 }
 
 .vote-btn.active-dislike {
-    background: #ffebee;
-    border-color: #d32f2f;
-    color: #d32f2f;
+    background: #f1f5f9;
+    border-color: #dc2626;
+    color: #dc2626;
 }
 
 .vote-count {
@@ -784,8 +891,9 @@ textarea.form-control {
     border-radius: 50%;
 }
 
-.theme-stat-color.news { background: #2e7d32; }
-.theme-stat-color.realestate { background: #689f38; }
+.theme-stat-color.news { background: #2196F3; }
+.theme-stat-color.realestate { background: #FFC107; }
+.theme-stat-color.job { background: #795548; }
 .theme-stat-color.transport { background: #ff8f00; }
 .theme-stat-color.ecology { background: #43a047; }
 .theme-stat-color.culture { background: #8e24aa; }
@@ -1291,4 +1399,153 @@ textarea.form-control {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+}
+
+/* 22. СТИЛИ ДЛЯ СЕКЦИИ СООБЩЕСТВ В ПРОФИЛЕ */
+.profile-communities {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+}
+
+.profile-communities h2 {
+    color: #2e7d32;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.communities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.community-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 1rem;
+    background: white;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.community-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0.1);
+    background: white;
+}
+
+.community-header h3 {
+    margin: 0 0 0.75rem 0;
+    color: #1b5e20;
+    font-size: 1.2rem;
+}
+
+.community-body p {
+    display: none; /* Скрываем описание в профиле */
+}
+
+/* Компактное отображение карточки сообщества в профиле */
+.profile-communities .community-card {
+    padding: 0.75rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+}
+
+.profile-communities .community-header {
+    margin-bottom: 0.5rem;
+}
+
+.profile-communities .community-header h3 {
+    font-size: 1rem;
+    margin: 0;
+    color: #1f2937;
+}
+
+.profile-communities .community-stats {
+    margin: 0.5rem 0;
+    font-size: 0.8rem;
+}
+
+.profile-communities .stat {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.profile-communities .community-actions {
+    margin-top: 0.5rem;
+    text-align: right;
+}
+
+/* Компактная сетка для сообществ в профиле */
+.profile-communities .communities-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+/* Дополнительные стили для компактности карточек сообществ в профиле */
+.profile-communities .community-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 100px;
+}
+
+.profile-communities .community-header {
+    flex-shrink: 0;
+}
+
+.profile-communities .community-stats {
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+.profile-communities .community-actions {
+    flex-shrink: 0;
+    margin-top: 0.5rem;
+}
+
+.community-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.community-actions {
+    text-align: right;
+}
+
+.no-communities-message {
+    text-align: center;
+    padding: 3rem;
+    color: #757575;
+}
+
+.no-communities-message i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #bdbdbd;
+}
+
+.no-communities-message h3 {
+    margin: 0 0 0.5rem 0;
+    color: #616161;
+}
+
+.no-communities-message p {
+    margin: 0;
+    font-size: 1rem;
 }

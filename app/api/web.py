@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import os
 from pathlib import Path
@@ -8,6 +8,7 @@ from app.services.auth import AuthService
 from app.api.dependencies import DBDep
 from app.services.posts import PostService
 from app.database.db_manager import DBManager
+from app.exceptions.auth import JWTTokenExpiredHTTPError
 
 router = APIRouter(prefix="/web", tags=["Фронтенд"])
 
@@ -35,6 +36,21 @@ async def index(request: Request, db: 'DBDep' = None, theme_id: int = None):
 
     return templates.TemplateResponse("index.html", {"request": request, "posts": posts})
 
+# Страница отдельного поста с комментариями
+@router.get("/post/{post_id}", response_class=HTMLResponse)
+async def post_detail(request: Request, post_id: int, db: 'DBDep' = None):
+    async with DBManager() as db_manager:
+        # Получаем пост с комментариями по ID
+        post = await PostService(db_manager).get_post_with_comments(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        
+        return templates.TemplateResponse("post_detail.html", {
+            "request": request,
+            "post": post,
+            "comments": post.get("comments", [])
+        })
+
 # Страница авторизации
 @router.get("/auth", response_class=HTMLResponse)
 async def auth_page(request: Request):
@@ -43,11 +59,44 @@ async def auth_page(request: Request):
 
 # Страница сообществ
 @router.get("/communities", response_class=HTMLResponse)
-async def communities_page(request: Request):
+async def communities_page(request: Request, db: 'DBDep' = None):
+    from app.services.communities import CommunitiesService
+    from app.database.db_manager import DBManager
+    
+    async with DBManager() as db_manager:
+        # Получаем сообщества из базы данных
+        communities = await CommunitiesService(db_manager).get_communities()
+    
     print(f"Accessing communities.html from: {TEMPLATES_DIR / 'communities.html'}")  # Отладка
-    return templates.TemplateResponse("communities.html", {"request": request})
+    return templates.TemplateResponse("communities.html", {
+        "request": request,
+        "communities": communities
+    })
 
 
+# Страница отдельного сообщества
+@router.get("/communities/{community_id}", response_class=HTMLResponse)
+async def community_detail_page(request: Request, community_id: int, db: 'DBDep' = None):
+    from app.services.communities import CommunitiesService
+    from app.database.db_manager import DBManager
+    from app.services.posts import PostService
+    
+    async with DBManager() as db_manager:
+        # Получаем информацию о сообществе
+        community = await CommunitiesService(db_manager).get_community(community_id)
+        if not community:
+            raise HTTPException(status_code=404, detail="Сообщество не найдено")
+        
+        # Получаем посты, связанные с этим сообществом
+        posts = await PostService(db_manager).get_posts_for_web(community_id=community_id, limit=20)
+    
+    return templates.TemplateResponse("community_detail.html", {
+        "request": request,
+        "community": community,
+        "posts": posts
+    })
+    
+    
 # Страница профиля пользователя
 @router.get("/profile", response_class=HTMLResponse)
 async def profile_page(
@@ -55,7 +104,6 @@ async def profile_page(
     user_id: int = Depends(get_current_user_id),
     db: DBManager = Depends(get_db)
 ):
-
     try:
         # Получаем полные данные пользователя с ролями
         user_data = await AuthService(db).get_me(user_id)
@@ -80,13 +128,30 @@ async def profile_page(
             "joined_date": user_data.created_at.strftime('%d.%m.%Y') if hasattr(user_data, 'created_at') and user_data.created_at else 'Неизвестно'
         }
         
+        # Create a serializable version of user_data with properly formatted communities
+        user_data_dict = user_data.model_dump() if hasattr(user_data, 'model_dump') else user_data.dict()
+        
+        # Ensure communities are properly serialized
+        if hasattr(user_data, 'communities') and user_data.communities is not None:
+            serialized_communities = []
+            for community in user_data.communities:
+                if hasattr(community, 'model_dump'):
+                    serialized_communities.append(community.model_dump())
+                elif hasattr(community, 'dict'):
+                    serialized_communities.append(community.dict())
+                else:
+                    # If it's already a dict or basic type, use it as is
+                    serialized_communities.append(community)
+            user_data_dict['communities'] = serialized_communities
+        else:
+            user_data_dict['communities'] = []
+        
         return templates.TemplateResponse("profile.html", {
             "request": request,
-            "user": user_data,
+            "user": user_data_dict,
             "stats": user_stats,
             "user_posts": user_posts_detailed
         })
-    except Exception as e:
-        print(f"Ошибка при загрузке профиля: {e}")
-        from fastapi.responses import RedirectResponse
+    except JWTTokenExpiredHTTPError:
+        # Перенаправляем на страницу авторизации при истечении токена
         return RedirectResponse(url="/web/auth")

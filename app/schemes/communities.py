@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict
 class SCommunityBase(BaseModel):
     name: str
     description: str
+    image: Optional[str] = None
 
 
 class SCommunityAdd(SCommunityBase):
@@ -14,6 +15,7 @@ class SCommunityAdd(SCommunityBase):
 class SCommunityUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    image: Optional[str] = None
 
 
 class SCommunityGet(SCommunityBase):

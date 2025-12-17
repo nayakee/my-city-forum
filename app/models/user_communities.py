@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class UserCommunityModel(Base):
     __tablename__ = "user_communities"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     community_id: Mapped[int] = mapped_column(ForeignKey("communities.id"), nullable=False)
     

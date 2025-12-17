@@ -8,6 +8,8 @@ from app.exceptions.auth import (
     InvalidJWTTokenError,
     InvalidTokenHTTPError,
     NoAccessTokenHTTPError,
+    JWTTokenExpiredError,
+    JWTTokenExpiredHTTPError
 )
 from app.schemes.users import SUserGet
 from app.services.auth import AuthService
@@ -29,6 +31,8 @@ def get_current_user_id(token: str = Depends(get_token)) -> int:
         data = AuthService.decode_token(token)
     except InvalidJWTTokenError:
         raise InvalidTokenHTTPError
+    except JWTTokenExpiredError:
+        raise JWTTokenExpiredHTTPError
     return data["user_id"]
 
 

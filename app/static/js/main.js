@@ -22,7 +22,124 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Обновляем статистику
     updateThemeStatsOnce();
+    
+    // Инициализируем закрытие меню по клику вне его
+    initMenuCloseHandlers();
 });
+
+// Инициализация обработчиков закрытия меню
+function initMenuCloseHandlers() {
+    // Закрытие меню по клику вне его
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.post-menu-btn') && !event.target.closest('.post-menu-dropdown')) {
+            document.querySelectorAll('.post-menu-dropdown.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+    
+    // Закрытие модального окна при клике на фон
+    document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDeleteModal();
+        }
+    });
+    
+    // Закрытие по Escape
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeDeleteModal();
+            document.querySelectorAll('.post-menu-dropdown.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+}
+
+// Переключение меню поста
+function togglePostMenu(postId) {
+    // Закрыть все открытые меню
+    document.querySelectorAll('.post-menu-dropdown.show').forEach(menu => {
+        if (menu.id !== `menu-${postId}`) {
+            menu.classList.remove('show');
+        }
+    });
+    
+    // Переключить текущее меню
+    const menu = document.getElementById(`menu-${postId}`);
+    if (menu) {
+        menu.classList.toggle('show');
+    }
+}
+
+// Копирование ссылки на пост
+function copyPostLink(postId) {
+    const postUrl = `${window.location.origin}/web/post/${postId}`;
+    
+    navigator.clipboard.writeText(postUrl)
+        .then(() => {
+            // Закрываем меню
+            const menu = document.getElementById(`menu-${postId}`);
+            if (menu) {
+                menu.classList.remove('show');
+            }
+            
+            // Используем глобальную систему уведомлений
+            if (window.notify) {
+                window.notify.success('Ссылка скопирована');
+            } else {
+                alert('Ссылка скопирована');
+            }
+        })
+        .catch(err => {
+            console.error('Ошибка копирования ссылки: ', err);
+            
+            if (window.notify) {
+                window.notify.error('Не удалось скопировать ссылку');
+            } else {
+                alert('Не удалось скопировать ссылку');
+            }
+        });
+}
+
+// Подтверждение удаления поста
+function confirmDeletePost(postId) {
+    // Закрываем меню
+    const menu = document.getElementById(`menu-${postId}`);
+    if (menu) {
+        menu.classList.remove('show');
+    }
+    
+    // Показываем модальное окно
+    document.getElementById('deleteModal').classList.add('show');
+    
+    // Сохраняем ID поста для удаления
+    document.getElementById('confirmDeleteBtn').setAttribute('data-post-id', postId);
+}
+
+// Закрытие модального окна
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+    document.getElementById('confirmDeleteBtn').removeAttribute('data-post-id');
+}
+
+// Удаление поста (заглушка - только показывает окно подтверждения)
+function deletePost() {
+    const postId = document.getElementById('confirmDeleteBtn').getAttribute('data-post-id');
+    
+    // Здесь будет реальная логика удаления через API
+    console.log(`Удаление поста с ID: ${postId}`);
+    
+    // Закрываем модальное окно
+    closeDeleteModal();
+    
+    // Используем глобальную систему уведомлений
+    if (window.notify) {
+        window.notify.success('Пост удален');
+    } else {
+        alert('Пост удален');
+    }
+}
 
 // Проверка авторизации
 function checkAuth() {
@@ -89,6 +206,41 @@ function checkAuth() {
     }
 }
 
+// Вспомогательная функция для проверки необходимости автоматического выхода
+function checkResponseForLogout(response) {
+    // Проверяем, содержит ли ответ флаг logout_required
+    if (response.headers.get('content-type')?.includes('application/json')) {
+        return response.clone().json().then(data => {
+            if (data.logout_required) {
+                handleAutoLogout();
+                return true;
+            }
+            return false;
+        }).catch(error => {
+            console.error('Ошибка при проверке ответа на logout_required:', error);
+            return false;
+        });
+    } else {
+        return Promise.resolve(false);
+    }
+}
+
+// Вспомогательная функция для выполнения fetch запроса с проверкой на истечение токена
+async function fetchWithTokenCheck(url, options = {}) {
+    const response = await fetch(url, {
+        credentials: 'include',
+        ...options
+    });
+    
+    // Проверяем, не требуется ли автоматический выход
+    const shouldLogout = await checkResponseForLogout(response);
+    if (shouldLogout) {
+        return null; // Прерываем выполнение, так как пользователь уже вышел
+    }
+    
+    return response;
+}
+
 // Получение текущего пользователя из localStorage
 function getCurrentUser() {
     try {
@@ -120,6 +272,7 @@ function initPageFunctionality() {
             const theme = this.getAttribute('data-theme');
             AppState.filterTheme = theme;
             filterPosts(theme);
+            updateThemeColorLines(); // Обновляем цвета линий при фильтрации
         });
     });
     
@@ -201,6 +354,10 @@ function initPageFunctionality() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
     }
+    
+    // 7. Обработка кнопок модального окна
+    document.getElementById('cancelDeleteBtn')?.addEventListener('click', closeDeleteModal);
+    document.getElementById('confirmDeleteBtn')?.addEventListener('click', deletePost);
 }
 
 // Фильтрация постов по теме
@@ -224,6 +381,32 @@ function filterPosts(theme) {
     updateThemeStatsOnce();
 }
 
+// Обновление цветных линий у постов в зависимости от темы
+function updateThemeColorLines() {
+    const posts = document.querySelectorAll('.post');
+    posts.forEach(post => {
+        const theme = post.getAttribute('data-theme');
+        let color;
+        
+        switch(theme) {
+            case 'новости':
+                color = '#2196F3';
+                break;
+            case 'недвижимость':
+                color = '#FF9800';
+                break;
+            case 'работа':
+                color = '#9c27b0';
+                break;
+            default:
+                color = '#2e7d32'; // Зеленый для общей темы
+        }
+        
+        // Применяем цвет к посту
+        post.style.borderLeft = `4px solid ${color}`;
+    });
+}
+
 // Инициализация фильтрации при загрузке страницы
 function initFilters() {
     // Убедимся, что все посты изначально видны
@@ -242,6 +425,9 @@ function initFilters() {
         // Устанавливаем активным фильтр "Все"
         allFilterBtn.classList.add('active');
     }
+    
+    // Инициализируем цветные линии у постов
+    updateThemeColorLines();
 }
 
 // Сброс формы создания поста
@@ -298,17 +484,20 @@ async function submitPostForm() {
         };
         
         console.log('Отправляемые данные:', postData);
-        
         // Отправляем запрос на сервер (используем v2 API)
-        // Используем credentials: 'include' для отправки куки с токеном аутентификации
-        const response = await fetch('/api/v2/posts', {
+        const response = await fetchWithTokenCheck('/api/v2/posts', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(postData),
-            credentials: 'include' // Включаем куки в запрос
+            body: JSON.stringify(postData)
         });
+
+        // Если токен истек, response будет null и пользователь уже вышел
+        if (!response) {
+            return; // Прерываем выполнение, так как пользователь уже вышел
+        }
+
         
         console.log('Ответ от сервера:', response);
         
@@ -353,7 +542,7 @@ async function submitPostForm() {
     } catch (error) {
         console.error('Ошибка при создании поста:', error);
         
-        // Показываем сообщение об ошибке
+        // Используем глобальную систему уведомлений
         if (window.notify) {
             window.notify.error(`Ошибка: ${error.message}`);
         } else {
@@ -372,13 +561,14 @@ async function loadPosts(themeId = null) {
         if (themeId && themeId !== 'all') {
             url += `&theme_id=${themeId}`;
         }
-        
-        const response = await fetch(url, {
-            credentials: 'include'  // Включаем куки в запрос
-        });
+        const response = await fetchWithTokenCheck(url);
+        if (!response) {
+            return; // Прерываем выполнение, так как пользователь уже вышел
+        }
         if (!response.ok) {
             throw new Error(`Ошибка загрузки постов: ${response.status}`);
         }
+
         
         const posts = await response.json();
         
@@ -419,6 +609,9 @@ function updatePostsFeed(posts) {
     
     // Инициализируем кнопки голосования для новых постов
     initVoteButtons();
+    
+    // Инициализируем цветные линии
+    updateThemeColorLines();
 }
 
 // Функция для создания элемента поста
@@ -452,7 +645,39 @@ function createPostElement(post) {
     postDiv.setAttribute('data-theme', themeData);
     postDiv.id = `post-${post.id}`;
     
+    // Устанавливаем цветную линию в зависимости от темы
+    let borderColor = '#2e7d32'; // По умолчанию зеленый
+    switch(themeData) {
+        case 'новости':
+            borderColor = '#2196F3';
+            break;
+        case 'недвижимость':
+            borderColor = '#FF9800';
+            break;
+        case 'работа':
+            borderColor = '#9c27b0';
+            break;
+    }
+    
+    postDiv.style.borderLeft = `4px solid ${borderColor}`;
+    postDiv.style.borderRadius = '8px';
+    
     postDiv.innerHTML = `
+        <!-- Кнопка меню поста (три точки) -->
+        <button class="post-menu-btn" onclick="togglePostMenu('${post.id}')">
+            <i class="fas fa-ellipsis-v"></i>
+        </button>
+        
+        <!-- Выпадающее меню для поста -->
+        <div class="post-menu-dropdown" id="menu-${post.id}">
+            <button class="post-menu-item" onclick="copyPostLink('${post.id}')">
+                <i class="fas fa-link"></i> Копировать ссылку
+            </button>
+            <button class="post-menu-item delete" onclick="confirmDeletePost('${post.id}')">
+                <i class="fas fa-trash"></i> Удалить пост
+            </button>
+        </div>
+        
         <div class="post-header">
             <div class="post-avatar">
                 ${post.user_name ? post.user_name.substring(0, 2).toUpperCase() : '??'}
@@ -461,6 +686,7 @@ function createPostElement(post) {
                 <span class="post-theme ${themeClass}">${post.theme_name || 'Общее'}</span>
                 ${post.user_name || 'Неизвестный'} • ${formatDate(post.created_at)}
             </div>
+        </div>
         <h4 class="post-title">${escapeHtml(post.header)}</h4>
         <div class="post-content">
             ${escapeHtml(post.body)}
@@ -510,10 +736,14 @@ function initVoteButtons() {
             const endpoint = isLike ? `/api/v2/posts/${postId}/like` : `/api/v2/posts/${postId}/dislike`;
             
             try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    credentials: 'include'  // Включаем куки в запрос
+                const response = await fetchWithTokenCheck(endpoint, {
+                    method: 'POST'
                 });
+
+                // Если токен истек, response будет null и пользователь уже вышел
+                if (!response) {
+                    return; // Прерываем выполнение, так как пользователь уже вышел
+                }
                 
                 if (response.ok) {
                     const result = await response.json();
@@ -565,6 +795,27 @@ function updateThemeStatsOnce() {
     if (jobCount) jobCount.textContent = `${counts['работа']} постов`;
 }
 
+// Функция для автоматического выхода при истечении токена
+function handleAutoLogout() {
+    // Удаляем пользователя из localStorage
+    localStorage.removeItem('user');
+    
+    // Удаляем токен из куки (если есть)
+    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
+    // Используем глобальную систему уведомлений
+    if (window.notify) {
+        window.notify.warning('Ваша сессия истекла. Пожалуйста, войдите снова.');
+    } else {
+        alert('Ваша сессия истекла. Пожалуйста, войдите снова.');
+    }
+    
+    // Перенаправляем на страницу авторизации
+    setTimeout(() => {
+        window.location.href = '/web/auth';
+    }, 1500);
+}
+
 // Обработка выхода
 function handleLogout(e) {
     e.preventDefault();
@@ -572,7 +823,7 @@ function handleLogout(e) {
     // Удаляем пользователя из localStorage
     localStorage.removeItem('user');
     
-    // Показываем уведомление
+    // Используем глобальную систему уведомлений
     if (window.notify) {
         window.notify.success('Вы успешно вышли из системы');
     } else {
@@ -587,12 +838,8 @@ function handleLogout(e) {
 
 // Функция для комментариев
 function showComments(postId) {
-    console.log('Показать комментарии для поста:', postId);
-    if (window.notify) {
-        window.notify.info('Функция комментариев временно недоступна');
-    } else {
-        alert('Функция комментариев временно недоступна');
-    }
+    // Переход на страницу поста с комментариями
+    window.location.href = `/web/post/${postId}`;
 }
 
 console.log('main.js загружен');

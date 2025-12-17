@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ community.name }} - Мой Город</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Стили для страницы сообщества */
+        .community-detail-page {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f8fafc 0%, #f0f9ff 100%);
+            position: relative;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .community-detail-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .community-header {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .community-icon-large {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #e8f5e9 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #2e7d32;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border: 4px solid #fff;
+        }
+        
+        .community-image-large {
+            max-width: 80px;
+            max-height: 80px;
+            object-fit: contain;
+        }
+        
+        .community-title-large {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1e293b;
+        }
+        
+        .community-description-large {
+            color: #64748b;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto 1.5rem;
+        }
+        
+        .community-stats-large {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin: 1.5rem auto;
+            max-width: 600px;
+        }
+        
+        .stat-large {
+            text-align: center;
+        }
+        
+        .stat-value-large {
+            display: block;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2e7d32;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label-large {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        
+        .community-actions-large {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .join-btn-large {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+        
+        .join-btn-large:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(46, 125, 50, 0.3);
+        }
+        
+        .join-btn-large.joined {
+            background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+        }
+        
+        .posts-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .posts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .post-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        
+        .post-card:hover {
+            background: white;
+            box-shadow: 0 8px 20px rgba(0, 0, 0.1);
+        }
+        
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .post-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+        
+        .post-author {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .post-meta {
+            display: flex;
+            gap: 1.5rem;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        
+        .post-content {
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .post-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .post-action {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .post-action:hover {
+            color: #2e7d32;
+        }
+        
+        .no-posts {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        
+        .back-to-communities {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #2e7d32;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s ease;
+        }
+        
+        .back-to-communities:hover {
+            color: #1b5e20;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .community-header {
+                padding: 1.5rem;
+            }
+            
+            .community-title-large {
+                font-size: 2rem;
+            }
+            
+            .community-icon-large {
+                width: 100px;
+                height: 100px;
+                font-size: 2.5rem;
+            }
+            
+            .community-stats-large {
+                flex-wrap: wrap;
+                gap: 1.5rem;
+            }
+            
+            .community-detail-container {
+                padding: 1.5rem 1rem;
+            }
+            
+            .community-actions-large {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .join-btn-large {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .community-title-large {
+                font-size: 1.75rem;
+            }
+            
+            .community-description-large {
+                font-size: 1rem;
+            }
+            
+            .stat-value-large {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Шапка -->
+    <header class="header">
+        <div class="container header-container">
+            <!-- Логотип -->
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Мой Город</h1>
+                    <span>Форум жителей</span>
+                </div>
+            </div>
+
+            <!-- Навигация -->
+            <nav class="main-nav">
+                <a href="/web/" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    Главная
+                </a>
+                <a href="/web/communities" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    Сообщества
+                </a>
+            </nav>
+
+            <!-- Авторизация -->
+            <div class="auth-section" id="auth-section">
+                <div class="auth-buttons" id="guest-buttons">
+                    <a href="/web/auth" class="btn btn-outline">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Вход
+                    </a>
+                    <a href="/web/auth" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i>
+                        Регистрация
+                    </a>
+                </div>
+                
+                <div class="user-menu" id="user-menu" style="display: none;">
+                    <div class="d-flex align-center gap-2">
+                        <img id="user-avatar" class="post-avatar" src="" alt="Аватар">
+                        <span id="username">Гость</span>
+                        <a href="/web/profile" class="btn btn-outline btn-sm" id="profile-link" style="margin-right: 8px;">
+                            <i class="fas fa-user"></i> Профиль
+                        </a>
+                        <button class="btn btn-outline btn-sm" id="logout-btn" type="button">
+                            <i class="fas fa-sign-out-alt"></i> Выход
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="community-detail-page">
+        <div class="container community-detail-container">
+            <!-- Кнопка назад -->
+            <a href="/web/communities" class="back-to-communities">
+                <i class="fas fa-arrow-left"></i>
+                Назад к сообществам
+            </a>
+
+            <!-- Информация о сообществе -->
+            <div class="community-header">
+                <div class="community-icon-large">
+                    {% if community.image %}
+                        <img src="{{ community.image }}" alt="{{ community.name }}" class="community-image-large">
+                    {% else %}
+                        <i class="fas fa-users"></i>
+                    {% endif %}
+                </div>
+                <h1 class="community-title-large">{{ community.name }}</h1>
+                <p class="community-description-large">{{ community.description }}</p>
+                
+                <div class="community-stats-large">
+                    <div class="stat-large">
+                        <span class="stat-value-large">{{ community.members_count or 0 }}</span>
+                        <span class="stat-label-large">участников</span>
+                    </div>
+                    <div class="stat-large">
+                        <span class="stat-value-large">{{ community.posts_count or 0 }}</span>
+                        <span class="stat-label-large">постов</span>
+                    </div>
+                </div>
+                
+                <div class="community-actions-large">
+                    <button class="join-btn-large" id="join-community-btn" data-community-id="{{ community.id }}">
+                        <i class="fas fa-user-plus"></i>
+                        Присоединиться
+                    </button>
+                </div>
+            </div>
+
+            <!-- Секция постов -->
+            <div class="posts-section">
+                <h2 class="section-title">Посты сообщества</h2>
+                
+                <div class="posts-list" id="posts-list">
+                    {% if posts %}
+                        {% for post in posts %}
+                        <div class="post-card">
+                            <div class="post-header">
+                                <h3 class="post-title">{{ post.title }}</h3>
+                                <span class="post-author">Автор: {{ post.author_name or "Аноним" }}</span>
+                            </div>
+                            
+                            <div class="post-content">
+                                {{ post.content[:500] }}{% if post.content|length > 500 %}...{% endif %}
+                            </div>
+                            
+                            <div class="post-meta">
+                                <span><i class="far fa-calendar"></i> {{ post.created_at.strftime('%d.%m.%Y %H:%M') if post.created_at else "—" }}</span>
+                                <span><i class="far fa-comments"></i> Комментариев: {{ post.comments_count or 0 }}</span>
+                                <span><i class="far fa-thumbs-up"></i> Лайков: {{ post.likes or 0 }}</span>
+                            </div>
+                            
+                            <div class="post-actions">
+                                <a href="/web/post/{{ post.id }}" class="post-action">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    Читать далее
+                                </a>
+                                <div class="post-action" data-post-id="{{ post.id }}" onclick="toggleLike(this.getAttribute('data-post-id'))">
+                                    <i class="far fa-thumbs-up"></i>
+                                    Нравится
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-posts">
+                            <i class="fas fa-comment-slash fa-2x" style="margin-bottom: 1rem;"></i>
+                            <p>В этом сообществе пока нет постов</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    <footer class="footer mt-4">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Мой Город</h3>
+                    <p>Форум для обсуждения городских вопросов жителями.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Навигация</h3>
+                    <div class="footer-links">
+                        <a href="/web/">Главная</a>
+                        <a href="/web/auth">Вход/Регистрация</a>
+                        <a href="/web/communities">Сообщества</a>
+                        <a href="#">Правила</a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>Контакты</h3>
+                    <div class="footer-links">
+                        <a href="#">Обратная связь</a>
+                        <a href="#">Поддержка</a>
+                        <a href="#">Реклама</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2023 Форум "Мой Город". Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Скрипты -->
+    <script src="/static/js/notifications.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script>
+        // Обработка кнопки присоединения к сообществу
+        document.addEventListener('DOMContentLoaded', function() {
+            const joinBtn = document.getElementById('join-community-btn');
+            if (joinBtn) {
+                joinBtn.addEventListener('click', async function() {
+                    const communityId = this.dataset.communityId;
+                    const isGuest = document.getElementById('guest-buttons').style.display !== 'none';
+                    
+                    if (isGuest) {
+                        if (typeof notify !== 'undefined') {
+                            notify.error('Для этого действия необходимо войти в систему');
+                        } else {
+                            alert('Для этого действия необходимо войти в систему');
+                        }
+                        return;
+                    }
+                    
+                    try {
+                        const isJoining = !this.classList.contains('joined');
+                        const endpoint = isJoining ?
+                            `/communities/${communityId}/join` :
+                            `/communities/${communityId}/leave`;
+                        
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            
+                            // Обновляем UI
+                            this.classList.toggle('joined');
+                            const icon = this.querySelector('i');
+                            icon.className = isJoining ? 'fas fa-check' : 'fas fa-user-plus';
+                            this.innerHTML = `
+                                <i class="fas ${isJoining ? 'fa-check' : 'fa-user-plus'}"></i>
+                                ${isJoining ? 'Вы в сообществе' : 'Присоединиться'}
+                            `;
+                            
+                            if (typeof notify !== 'undefined') {
+                                notify.success(result.message);
+                            } else {
+                                alert(result.message);
+                            }
+                        } else {
+                            const error = await response.json();
+                            throw new Error(error.detail || 'Ошибка операции');
+                        }
+                    } catch (error) {
+                        console.error('Ошибка операции с сообществом:', error);
+                        if (typeof notify !== 'undefined') {
+                            notify.error(error.message || 'Произошла ошибка');
+                        } else {
+                            alert(error.message || 'Произошла ошибка');
+                        }
+                    }
+                });
+            }
+        });
+
+        // Функция для лайков
+        async function toggleLike(postId) {
+            const isGuest = document.getElementById('guest-buttons').style.display !== 'none';
+            
+            if (isGuest) {
+                if (typeof notify !== 'undefined') {
+                    notify.error('Для этого действия необходимо войти в систему');
+                } else {
+                    alert('Для этого действия необходимо войти в систему');
+                }
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/posts/${postId}/like`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (typeof notify !== 'undefined') {
+                        notify.success(result.message);
+                    }
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Ошибка лайка');
+                }
+            } catch (error) {
+                console.error('Ошибка лайка:', error);
+                if (typeof notify !== 'undefined') {
+                    notify.error(error.message || 'Произошла ошибка');
+                } else {
+                    alert(error.message || 'Произошла ошибка');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

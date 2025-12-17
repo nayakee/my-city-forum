@@ -359,7 +359,7 @@ document.head.appendChild(style);
 
 const API_BASE_URL = window.location.origin;
 const COMMUNITIES_API = {
-    GET_COMMUNITIES: '/communities/',
+    GET_COMMUNITIES: '/communities',
     GET_COMMUNITY: '/communities/{id}',
     JOIN_COMMUNITY: '/communities/{id}/join',
     LEAVE_COMMUNITY: '/communities/{id}/leave',
@@ -434,7 +434,7 @@ class CommunitiesManager {
     
     async loadInitialCommunities() {
         try {
-            const response = await fetch(COMMUNITIES_API.GET_COMMUNITIES, {
+            const response = await fetch(`${API_BASE_URL}/communities`, {
                 credentials: 'include'
             });
             
@@ -610,7 +610,7 @@ class CommunitiesManager {
                 params.append('search', searchInput.value);
             }
             
-            const response = await fetch(`${COMMUNITIES_API.GET_COMMUNITIES}?${params}`, {
+            const response = await fetch(`${API_BASE_URL}/communities?${params}`, {
                 credentials: 'include'
             });
             
@@ -661,7 +661,7 @@ class CommunitiesManager {
             </div>
             <div class="community-content">
                 <div class="community-title">
-                    <h3><a href="#">${community.name}</a></h3>
+                    <h3><a href="/web/communities/${community.id}">${community.name}</a></h3>
                 </div>
                 <p class="community-description">
                     ${community.description}

@@ -7,6 +7,43 @@ const API = {
 };
 
 // Вспомогательные функции
+
+// Вспомогательная функция для проверки необходимости автоматического выхода
+function checkResponseForLogout(response) {
+    // Проверяем, содержит ли ответ флаг logout_required
+    if (response.headers.get('content-type')?.includes('application/json')) {
+        return response.clone().json().then(data => {
+            if (data.logout_required) {
+                // Перенаправляем на страницу авторизации при истечении токена
+                window.location.href = '/web/auth';
+                return true;
+            }
+            return false;
+        }).catch(error => {
+            console.error('Ошибка при проверке ответа на logout_required:', error);
+            return false;
+        });
+    } else {
+        return Promise.resolve(false);
+    }
+}
+
+// Вспомогательная функция для выполнения fetch запроса с проверкой на истечение токена
+async function fetchWithTokenCheck(url, options = {}) {
+    const response = await fetch(url, {
+        credentials: 'include',
+        ...options
+    });
+    
+    // Проверяем, не требуется ли автоматический выход
+    const shouldLogout = await checkResponseForLogout(response);
+    if (shouldLogout) {
+        return null; // Прерываем выполнение, так как пользователь уже вышел
+    }
+    
+    return response;
+}
+
 function disableButton(button, text = 'Загрузка...') {
     if (!button) return;
     button.dataset.originalText = button.innerHTML;
@@ -24,20 +61,20 @@ function enableButton(button) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Страница авторизации загружена');
     
-    // Проверяем авторизацию, но не перенаправляем с этой страницы
-    checkAuth();
-    
     // Настраиваем обработчики
     setupAuthForms();
 });
-
 // Проверка авторизации
 async function checkAuth() {
     try {
-        const response = await fetch(API_BASE_URL + API.ME, {
-            method: 'GET',
-            credentials: 'include'
+        const response = await fetchWithTokenCheck(API_BASE_URL + API.ME, {
+            method: 'GET'
         });
+
+        // Если токен истек, response будет null и пользователь уже перенаправлен
+        if (!response) {
+            return; // Прерываем выполнение, так как пользователь уже вышел
+        }
         
         if (response.ok) {
             // Если пользователь уже авторизован, НЕ перенаправляем с страницы авторизации
@@ -60,6 +97,7 @@ async function checkAuth() {
         localStorage.removeItem('user');
     }
 }
+
 
 // Настройка обработчиков форм
 function setupAuthForms() {
@@ -99,17 +137,20 @@ async function handleLogin(e) {
     
     // Показываем загрузку
     disableButton(submitBtn, 'Вход...');
-    
     try {
-        const response = await fetch(API_BASE_URL + API.LOGIN, {
+        const response = await fetchWithTokenCheck(API_BASE_URL + API.LOGIN, {
             method: 'POST',
             headers: {
                 'accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(loginData),
-            credentials: 'include'
+            body: JSON.stringify(loginData)
         });
+
+        // Если токен истек, response будет null и пользователь уже вышел
+        if (!response) {
+            return; // Прерываем выполнение, так как пользователь уже вышел
+        }
         
         const responseText = await response.text();
         let data;
@@ -138,6 +179,7 @@ async function handleLogin(e) {
             
             notify.error(errorMessage);
         }
+
         
     } catch (error) {
         console.error('Ошибка сети:', error);
@@ -192,7 +234,7 @@ async function handleRegister(e) {
     disableButton(submitBtn, 'Регистрация...');
     
     try {
-        const response = await fetch(API_BASE_URL + API.REGISTER, {
+        const response = await fetchWithTokenCheck(API_BASE_URL + API.REGISTER, {
             method: 'POST',
             headers: {
                 'accept': 'application/json',
@@ -200,6 +242,11 @@ async function handleRegister(e) {
             },
             body: JSON.stringify(userData)
         });
+
+        // Если токен истек, response будет null и пользователь уже вышел
+        if (!response) {
+            return; // Прерываем выполнение, так как пользователь уже вышел
+        }
         
         const responseText = await response.text();
         let data;
@@ -229,7 +276,7 @@ async function handleRegister(e) {
             
             notify.error(errorMessage);
         }
-        
+
     } catch (error) {
         console.error('Ошибка сети:', error);
         notify.error('Ошибка подключения к серверу');

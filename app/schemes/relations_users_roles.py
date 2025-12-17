@@ -1,4 +1,4 @@
-from app.schemes.users import SUserGet
+from app.schemes.users import SUserGet, SUserGetWithRelsAndCommunities
 from app.schemes.roles import SRoleGet
 
 

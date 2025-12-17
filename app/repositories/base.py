@@ -80,8 +80,16 @@ class BaseRepository(Generic[T]):
 
     async def add(self, data: T):
         try:
+            # Check if data is a Pydantic model or a dictionary
+            if hasattr(data, 'model_dump'):
+                # It's a Pydantic model
+                values = data.model_dump()
+            else:
+                # It's a dictionary
+                values = data
+            
             add_stmt = (
-                insert(self.model).values(**data.model_dump()).returning(self.model)
+                insert(self.model).values(**values).returning(self.model)
             )
             # print(add_stmt.compile(compile_kwargs={"literal_binds": True}))
 
@@ -99,7 +107,15 @@ class BaseRepository(Generic[T]):
         """
         Метод для множественного добавления данных в таблицу
         """
-        add_stmt = insert(self.model).values([item.model_dump() for item in data])
+        # Check if items in data are Pydantic models or dictionaries
+        if data and hasattr(data[0], 'model_dump'):
+            # Items are Pydantic models
+            values = [item.model_dump() for item in data]
+        else:
+            # Items are dictionaries
+            values = data
+        
+        add_stmt = insert(self.model).values(values)
         # print(add_stmt.compile(compile_kwargs={"literal_binds": True}))
         await self.session.execute(add_stmt)
 
@@ -125,6 +141,14 @@ class BaseRepository(Generic[T]):
         for key, value in filter_by.items():
             if hasattr(self.model, key) and value is not None:
                 edit_stmt = edit_stmt.where(getattr(self.model, key) == value)
-                
-        edit_stmt = edit_stmt.values(**data.model_dump(exclude_unset=exclude_unset))
+        
+        # Check if data is a Pydantic model or a dictionary
+        if hasattr(data, 'model_dump'):
+            # It's a Pydantic model
+            values = data.model_dump(exclude_unset=exclude_unset)
+        else:
+            # It's a dictionary
+            values = data
+            
+        edit_stmt = edit_stmt.values(**values)
         await self.session.execute(edit_stmt)

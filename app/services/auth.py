@@ -13,6 +13,7 @@ from app.schemes.users import (
     SUserAdd,
     SUserAddRequest,
     SUserAuth,
+    SUserGetWithRelsAndCommunities
 )
 from app.schemes.relations_users_roles import SUserGetWithRels
 from app.services.base import BaseService
@@ -83,7 +84,7 @@ class AuthService(BaseService):
         return access_token
 
     async def get_me(self, user_id: int):
-        user: SUserGetWithRels | None = await self.db.users.get_one_or_none_with_role(
+        user: SUserGetWithRelsAndCommunities | None = await self.db.users.get_one_or_none_with_role_and_communities(
             id=user_id
         )
         if not user:

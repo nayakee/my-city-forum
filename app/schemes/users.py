@@ -1,9 +1,11 @@
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, EmailStr
+from datetime import datetime
 
 if TYPE_CHECKING:
     from app.schemes.roles import SRoleGet
+    from app.schemes.communities import SCommunityGet
 
 
 class SUserAddRequest(BaseModel):
@@ -25,8 +27,6 @@ class SUserAuth(BaseModel):
     password: str
 
 
-from datetime import datetime
-
 class SUserGet(SUserAdd):
     id: int
     created_at: datetime | None = None # Добавляем поле даты создания
@@ -37,3 +37,17 @@ class SUserPatch(BaseModel):
     email: EmailStr | None = None
     hashed_password: str | None = None
     role_id: int | None = None
+
+
+# Extended user scheme with communities
+class SUserGetWithRelsAndCommunities(SUserGet):
+    role: 'SRoleGet | None' = None
+    communities: list['SCommunityGet'] | None = None
+
+# Rebuild the model to handle forward references properly after all imports are processed
+def __rebuild_model__():
+    from .roles import SRoleGet
+    from .communities import SCommunityGet
+    SUserGetWithRelsAndCommunities.model_rebuild()
+
+__rebuild_model__()

@@ -8,6 +8,7 @@ from app.repositories.comments import CommentsRepository
 from app.repositories.communities import CommunitiesRepository
 from app.repositories.reports import ReportsRepository
 from app.repositories.themes import ThemesRepository
+from app.repositories.user_communities import UserCommunitiesRepository
 
 
 class DBManager:
@@ -25,6 +26,7 @@ class DBManager:
         self.communities: Optional[CommunitiesRepository] = None
         self.reports: Optional[ReportsRepository] = None
         self.themes: Optional[ThemesRepository] = None
+        self.user_communities: Optional[UserCommunitiesRepository] = None
 
     async def __aenter__(self):
         """Вход в контекстный менеджер"""
@@ -38,6 +40,7 @@ class DBManager:
         self.communities = CommunitiesRepository(self.session)
         self.reports = ReportsRepository(self.session)
         self.themes = ThemesRepository(self.session)
+        self.user_communities = UserCommunitiesRepository(self.session)
         
         return self
 
@@ -60,6 +63,7 @@ class DBManager:
         self.communities = None
         self.reports = None
         self.themes = None
+        self.user_communities = None
         self.session = None
 
     async def commit(self):
@@ -82,6 +86,7 @@ class DBManager:
             'communities': self.communities,
             'reports': self.reports,
             'themes': self.themes,
+            'user_communities': self.user_communities,
         }
         
         return repositories.get(repository_type)

@@ -24,7 +24,22 @@ from app.api.reports import router as report_router
 from app.api.themes import router as theme_router
 from app.api.simple_posts import router as simple_post_router
 
+from app.exceptions.auth import JWTTokenExpiredHTTPError
+
 app = FastAPI(title="Форум 'Мой Город'", version="0.0.1")
+
+# Глобальный обработчик исключений для истекших токенов
+@app.exception_handler(JWTTokenExpiredHTTPError)
+async def handle_expired_token(request, exc: JWTTokenExpiredHTTPError):
+    """Обработчик для истечения токена - возвращает специальный ответ для автоматического выхода"""
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": exc.detail,
+            "logout_required": True  # Индикатор, что требуется автоматический выход
+        }
+    )
 
 app.mount("/static", StaticFiles(directory="app/static"), "static")
 
