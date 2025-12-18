@@ -17,7 +17,6 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from app.database.database import Base
-# Импортируем все модели, чтобы они были зарегистрированы в Base
 from app.models.users import UserModel
 from app.models.roles import RoleModel
 from app.models.posts import PostModel
@@ -26,6 +25,7 @@ from app.models.communities import CommunityModel
 from app.models.reports import ReportModel
 from app.models.themes import ThemeModel
 from app.models.user_communities import UserCommunityModel
+from app.models.favorites import FavoritePostModel
 
 target_metadata = Base.metadata
 

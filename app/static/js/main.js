@@ -7,15 +7,24 @@ const AppState = {
     user: null,
     currentPage: 1,
     totalPages: 1,
-    filterTheme: 'all'
+    filterTheme: 'all',
+    userReactions: {} // Храним реакции текущего пользователя {postId: 'like'/'dislike'}
 };
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Главная страница загружена. Инициализация...');
     
+    // Устанавливаем правильные шрифты
+    initFonts();
+    
     // Проверяем авторизацию
     checkAuth();
+    
+    // Загружаем реакции пользователя если он авторизован
+    if (AppState.user) {
+        loadUserReactions();
+    }
     
     // Инициализируем функционал страницы
     initPageFunctionality();
@@ -25,7 +34,144 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Инициализируем закрытие меню по клику вне его
     initMenuCloseHandlers();
+    
+    // Инициализируем обработчики кликов на посты
+    initPostClickHandlers();
 });
+
+// Инициализация шрифтов
+function initFonts() {
+    // Принудительно устанавливаем шрифты
+    document.body.style.fontFamily = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
+    document.body.style.fontWeight = '400';
+    document.body.style.fontSize = '16px';
+    document.body.style.lineHeight = '1.5';
+    
+    // Устанавливаем шрифты для заголовков
+    document.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(el => {
+        el.style.fontFamily = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
+        el.style.fontWeight = '600';
+    });
+    
+    // Устанавливаем шрифты для кнопок
+    document.querySelectorAll('.btn, button').forEach(el => {
+        el.style.fontFamily = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
+        el.style.fontWeight = '500';
+    });
+    
+    // Устанавливаем шрифты для постов
+    document.querySelectorAll('.post').forEach(el => {
+        el.style.fontFamily = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
+    });
+}
+
+// Инициализация обработчиков кликов на посты
+function initPostClickHandlers() {
+    // Вешаем обработчик на весь контейнер с постами
+    const postsFeed = document.getElementById('posts-feed');
+    if (postsFeed) {
+        postsFeed.addEventListener('click', function(e) {
+            // Проверяем, кликнули ли на сам пост (но не на кнопки внутри)
+            const postElement = e.target.closest('.post');
+            if (postElement) {
+                // Проверяем, не кликнули ли на элементы, которые не должны вести на страницу поста
+                const isClickableElement = e.target.closest('.vote-btn') || 
+                                          e.target.closest('.post-menu-btn') || 
+                                          e.target.closest('.post-menu-dropdown') ||
+                                          e.target.closest('.post-menu-item') ||
+                                          e.target.closest('.btn[onclick*="showComments"]');
+                
+                if (!isClickableElement) {
+                    const postId = postElement.id.replace('post-', '');
+                    if (postId) {
+                        // Переходим на страницу поста
+                        window.location.href = `/web/post/${postId}`;
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Загрузка реакций текущего пользователя для всех постов на странице
+async function loadUserReactions() {
+    if (!AppState.user) return;
+    
+    try {
+        // Получаем все ID постов на странице
+        const postElements = document.querySelectorAll('.post');
+        const postIds = Array.from(postElements).map(el => el.id.replace('post-', ''));
+        
+        if (postIds.length === 0) return;
+        
+        // Параллельно загружаем реакции для всех постов
+        const promises = postIds.map(postId => getUserReactionForPost(postId));
+        await Promise.all(promises);
+        
+    } catch (error) {
+        console.error('Ошибка при загрузке реакций пользователя:', error);
+    }
+}
+
+// Получение реакции пользователя для конкретного поста
+async function getUserReactionForPost(postId) {
+    if (!AppState.user) return null;
+    
+    try {
+        const response = await fetchWithTokenCheck(`/api/v2/posts/${postId}/reaction`);
+        
+        // Если токен истек, response будет null и пользователь уже вышел
+        if (!response) {
+            return null;
+        }
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.status === 'OK') {
+                // Сохраняем реакцию пользователя
+                AppState.userReactions[postId] = result.reaction_type;
+                
+                // Обновляем отображение кнопок голосования
+                updateVoteButtonsForPost(postId, result);
+                return result.reaction_type;
+            }
+        }
+    } catch (error) {
+        console.error(`Ошибка при получении реакции для поста ${postId}:`, error);
+    }
+    return null;
+}
+
+// Обновление кнопок голосования для поста
+function updateVoteButtonsForPost(postId, reactionData) {
+    const likeBtn = document.querySelector(`.vote-btn.like[data-post-id="${postId}"]`);
+    const dislikeBtn = document.querySelector(`.vote-btn.dislike[data-post-id="${postId}"]`);
+    
+    if (likeBtn && dislikeBtn) {
+        // Сбрасываем все активные классы
+        likeBtn.classList.remove('active-like');
+        dislikeBtn.classList.remove('active-dislike');
+        
+        // Обновляем счетчики
+        const likeCountSpan = likeBtn.querySelector('.vote-count');
+        const dislikeCountSpan = dislikeBtn.querySelector('.vote-count');
+        
+        if (likeCountSpan && reactionData.likes !== undefined) {
+            likeCountSpan.textContent = reactionData.likes;
+        }
+        
+        if (dislikeCountSpan && reactionData.dislikes !== undefined) {
+            dislikeCountSpan.textContent = reactionData.dislikes;
+        }
+        
+        // Устанавливаем активный класс для текущей реакции
+        if (reactionData.reaction_type === 'like') {
+            likeBtn.classList.add('active-like');
+        } else if (reactionData.reaction_type === 'dislike') {
+            dislikeBtn.classList.add('active-dislike');
+        }
+    }
+}
 
 // Инициализация обработчиков закрытия меню
 function initMenuCloseHandlers() {
@@ -148,6 +294,7 @@ function checkAuth() {
     const userMenu = document.getElementById('user-menu');
     
     if (user) {
+        AppState.user = user;
         if (guestButtons) guestButtons.style.display = 'none';
         if (userMenu) userMenu.style.display = 'block';
         const username = document.getElementById('username');
@@ -157,12 +304,9 @@ function checkAuth() {
         const userAvatar = document.getElementById('user-avatar');
         if (userAvatar) {
             if (user.name) {
-                // Показываем инициалы пользователя вместо изображения
-                userAvatar.style.display = 'none'; // Скрываем img
-                // Создаем или обновляем элемент с инициалами, если он не существует
+                userAvatar.style.display = 'none';
                 let initialsElement = userAvatar.nextElementSibling;
                 if (!initialsElement || !initialsElement.classList.contains('user-initials')) {
-                    // Создаем элемент с инициалами
                     initialsElement = document.createElement('div');
                     initialsElement.className = 'post-avatar user-initials';
                     initialsElement.style.cssText = `
@@ -183,21 +327,19 @@ function checkAuth() {
                 initialsElement.textContent = user.name.substring(0, 2).toUpperCase();
                 initialsElement.style.display = 'flex';
             } else {
-                // Если нет имени, показываем стандартный аватар
                 userAvatar.style.display = 'block';
                 userAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'Пользователь')}&background=2e7d32&color=fff`;
             }
         }
     } else {
+        AppState.user = null;
         if (guestButtons) guestButtons.style.display = 'flex';
         if (userMenu) userMenu.style.display = 'none';
         
-        // Сбрасываем аватар пользователя
         const userAvatar = document.getElementById('user-avatar');
         if (userAvatar) {
             userAvatar.style.display = 'block';
             userAvatar.src = '';
-            // Удаляем элемент с инициалами, если он существует
             const initialsElement = userAvatar.nextElementSibling;
             if (initialsElement && initialsElement.classList.contains('user-initials')) {
                 initialsElement.remove();
@@ -258,6 +400,9 @@ function getCurrentUser() {
 function initPageFunctionality() {
     // Инициализация фильтрации
     initFilters();
+    
+    // Инициализация поиска
+    initSearch();
     
     // 1. Фильтрация постов
     const filterButtons = document.querySelectorAll('.theme-filters-bar .theme-filter-btn');
@@ -346,7 +491,7 @@ function initPageFunctionality() {
         console.error('Форма создания поста не найдена');
     }
     
-    // 5. Голосование
+    // 5. Голосование - НОВАЯ ЛОГИКА
     initVoteButtons();
     
     // 6. Кнопка выхода
@@ -602,9 +747,9 @@ function updatePostsFeed(posts) {
         postsFeed.appendChild(postElement);
     });
     
-    // Обновляем фильтрацию, если есть активный фильтр
-    if (AppState.filterTheme && AppState.filterTheme !== 'all') {
-        filterPosts(AppState.filterTheme);
+    // Загружаем реакции пользователя для всех постов
+    if (AppState.user) {
+        loadUserReactions();
     }
     
     // Инициализируем кнопки голосования для новых постов
@@ -616,7 +761,6 @@ function updatePostsFeed(posts) {
 
 // Функция для создания элемента поста
 function createPostElement(post) {
-    // Нормализуем названия тем для использования в CSS классах и атрибутах
     let themeClass = 'general';
     let themeData = 'general';
     if (post.theme_name) {
@@ -641,12 +785,16 @@ function createPostElement(post) {
     }
     
     const postDiv = document.createElement('div');
-    postDiv.className = `post ${themeClass}`;
+    postDiv.className = `post ${themeClass} post-clickable`;
     postDiv.setAttribute('data-theme', themeData);
     postDiv.id = `post-${post.id}`;
     
-    // Устанавливаем цветную линию в зависимости от темы
-    let borderColor = '#2e7d32'; // По умолчанию зеленый
+    // Проверяем текущую реакцию пользователя
+    const userReaction = AppState.userReactions[post.id];
+    const isLiked = userReaction === 'like';
+    const isDisliked = userReaction === 'dislike';
+    
+    let borderColor = '#2e7d32';
     switch(themeData) {
         case 'новости':
             borderColor = '#2196F3';
@@ -661,6 +809,7 @@ function createPostElement(post) {
     
     postDiv.style.borderLeft = `4px solid ${borderColor}`;
     postDiv.style.borderRadius = '8px';
+    postDiv.style.cursor = 'pointer';
     
     postDiv.innerHTML = `
         <!-- Кнопка меню поста (три точки) -->
@@ -693,15 +842,18 @@ function createPostElement(post) {
         </div>
         <div class="post-actions">
             <div class="vote-buttons">
-                <button class="vote-btn like ${post.likes > 0 ? 'active-like' : ''}" data-post-id="${post.id}">
+                <button class="vote-btn like ${isLiked ? 'active-like' : ''}" data-post-id="${post.id}">
                     <i class="fas fa-thumbs-up"></i>
                     <span class="vote-count">${post.likes || 0}</span>
                 </button>
-                <button class="vote-btn dislike ${post.dislikes > 0 ? 'active-dislike' : ''}" data-post-id="${post.id}">
+                <button class="vote-btn dislike ${isDisliked ? 'active-dislike' : ''}" data-post-id="${post.id}">
                     <i class="fas fa-thumbs-down"></i>
                     <span class="vote-count">${post.dislikes || 0}</span>
                 </button>
             </div>
+            <button class="vote-btn favorite" data-post-id="${post.id}">
+                <i class="fas fa-star"></i>
+            </button>
             <button class="btn" onclick="showComments('${post.id}')">
                 <i class="far fa-comment"></i> <span id="comment-count-${post.id}">${post.comments_count || 0}</span> комментариев
             </button>
@@ -724,7 +876,7 @@ function formatDate(dateString) {
     return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-// Инициализация кнопок голосования
+// НОВАЯ ЛОГИКА ГОЛОСОВАНИЯ
 function initVoteButtons() {
     document.querySelectorAll('.vote-btn').forEach(btn => {
         btn.addEventListener('click', async function(e) {
@@ -732,44 +884,164 @@ function initVoteButtons() {
             e.stopPropagation();
             
             const postId = this.getAttribute('data-post-id');
-            const isLike = this.classList.contains('like');
-            const endpoint = isLike ? `/api/v2/posts/${postId}/like` : `/api/v2/posts/${postId}/dislike`;
             
-            try {
-                const response = await fetchWithTokenCheck(endpoint, {
-                    method: 'POST'
-                });
-
-                // Если токен истек, response будет null и пользователь уже вышел
-                if (!response) {
-                    return; // Прерываем выполнение, так как пользователь уже вышел
+            // Проверяем, является ли кнопка избранного
+            if (this.classList.contains('favorite')) {
+                // Обработка кнопки избранного
+                if (!AppState.user) {
+                    // Если пользователь не авторизован, перенаправляем на страницу входа
+                    window.location.href = '/web/auth';
+                    return;
                 }
                 
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.status === 'OK') {
-                        // Обновляем счетчик голосов
-                        const countSpan = this.querySelector('.vote-count');
-                        if (countSpan) {
-                            let count = parseInt(countSpan.textContent) || 0;
-                            countSpan.textContent = count + 1;
+                try {
+                    const response = await fetch('/favorites/toggle', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({ post_id: parseInt(postId) })
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        
+                        // Обновляем состояние кнопки
+                        if (result.is_favorite) {
+                            this.classList.add('active-favorite');
+                        } else {
+                            this.classList.remove('active-favorite');
                         }
                         
-                        // Обновляем класс кнопки
-                        if (isLike) {
-                            this.classList.add('active-like');
-                        } else {
-                            this.classList.add('active-dislike');
+                        // Показываем уведомление
+                        if (window.notify) {
+                            window.notify.success(result.message);
+                        }
+                    } else {
+                        const error = await response.json();
+                        if (window.notify) {
+                            window.notify.error(error.detail || 'Ошибка при изменении избранного');
                         }
                     }
-                } else {
-                    console.error('Ошибка при голосовании:', response.status);
+                } catch (error) {
+                    console.error('Ошибка при изменении избранного:', error);
+                    if (window.notify) {
+                        window.notify.error('Ошибка при изменении избранного');
+                    }
                 }
-            } catch (error) {
-                console.error('Ошибка сети при голосовании:', error);
+            } else {
+                // Проверяем авторизацию для кнопок голосования
+                if (!AppState.user) {
+                    if (window.notify) {
+                        window.notify.warning('Для голосования необходимо авторизоваться');
+                    } else {
+                        alert('Для голосования необходимо авторизоваться');
+                    }
+                    return;
+                }
+                
+                const isLike = this.classList.contains('like');
+                const endpoint = isLike ? `/api/v2/posts/${postId}/like` : `/api/v2/posts/${postId}/dislike`;
+                
+                try {
+                    const response = await fetchWithTokenCheck(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    // Если токен истек, response будет null и пользователь уже вышел
+                    if (!response) {
+                        return;
+                    }
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.status === 'OK') {
+                            // Обновляем глобальное состояние реакций
+                            AppState.userReactions[postId] = result.user_reaction;
+                            
+                            // Обновляем счетчики голосов для обоих кнопок
+                            const likeBtn = document.querySelector(`.vote-btn.like[data-post-id="${postId}"]`);
+                            const dislikeBtn = document.querySelector(`.vote-btn.dislike[data-post-id="${postId}"]`);
+                            
+                            if (likeBtn && result.likes !== undefined) {
+                                const likeCountSpan = likeBtn.querySelector('.vote-count');
+                                if (likeCountSpan) {
+                                    likeCountSpan.textContent = result.likes;
+                                }
+                            }
+                            
+                            if (dislikeBtn && result.dislikes !== undefined) {
+                                const dislikeCountSpan = dislikeBtn.querySelector('.vote-count');
+                                if (dislikeCountSpan) {
+                                    dislikeCountSpan.textContent = result.dislikes;
+                                }
+                            }
+                            
+                            // Обновляем состояние кнопок
+                            updateVoteButtonsAfterAction(postId, result.action, isLike);
+                            
+                            // Показываем сообщение о результате
+                            if (window.notify) {
+                                window.notify.success(result.message);
+                            }
+                        }
+                    } else {
+                        const errorData = await response.json().catch(() => ({ detail: 'Ошибка сервера' }));
+                        if (window.notify) {
+                            window.notify.error(errorData.detail || 'Ошибка при голосовании');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Ошибка сети при голосовании:', error);
+                    if (window.notify) {
+                        window.notify.error('Ошибка сети при голосовании');
+                    }
+                }
             }
         });
     });
+}
+
+// Обновление состояния кнопок после действия
+function updateVoteButtonsAfterAction(postId, action, isLike) {
+    const likeBtn = document.querySelector(`.vote-btn.like[data-post-id="${postId}"]`);
+    const dislikeBtn = document.querySelector(`.vote-btn.dislike[data-post-id="${postId}"]`);
+    
+    if (!likeBtn || !dislikeBtn) return;
+    
+    // Сначала сбрасываем все активные состояния
+    likeBtn.classList.remove('active-like');
+    dislikeBtn.classList.remove('active-dislike');
+    
+    // Применяем новое состояние в зависимости от действия
+    switch (action) {
+        case 'added':
+            // Добавлена новая реакция
+            if (isLike) {
+                likeBtn.classList.add('active-like');
+            } else {
+                dislikeBtn.classList.add('active-dislike');
+            }
+            break;
+            
+        case 'removed':
+            // Реакция удалена
+            // Оба кнопки остаются неактивными
+            break;
+            
+        case 'changed':
+            // Реакция изменена (лайк на дизлайк или наоборот)
+            if (isLike) {
+                likeBtn.classList.add('active-like');
+            } else {
+                dislikeBtn.classList.add('active-dislike');
+            }
+            break;
+    }
 }
 
 // Обновление статистики тем
@@ -842,4 +1114,108 @@ function showComments(postId) {
     window.location.href = `/web/post/${postId}`;
 }
 
-console.log('main.js загружен');
+// Инициализация поиска
+function initSearch() {
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    if (!searchInput) return;
+    
+    let searchTimeout;
+    
+    // Обработчик для поля ввода (поиск по мере ввода)
+    searchInput.addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        
+        const searchTerm = e.target.value.trim();
+        console.log('Ввод поиска:', searchTerm); // Добавим лог для отладки
+        
+        // Задержка в 300мс перед выполнением поиска
+        searchTimeout = setTimeout(() => {
+            if (searchTerm.length === 0) {
+                // Если поле пустое, показываем все посты
+                console.log('Сброс фильтров');
+                resetFilters();
+            } else {
+                // Выполняем поиск для любого запроса длиной 1 и более символов
+                console.log('Выполнение поиска:', searchTerm);
+                performSearch(searchTerm);
+            }
+        }, 300);
+    });
+    
+    // Обработчик для кнопки поиска
+    if (searchButton) {
+        searchButton.addEventListener('click', function() {
+            const searchTerm = searchInput.value.trim();
+            console.log('Кнопка поиска нажата, значение:', searchTerm); // Лог для отладки
+            
+            if (searchTerm.length > 0) {
+                performSearch(searchTerm);
+            } else {
+                // Если поле пустое, сбрасываем фильтры
+                resetFilters();
+            }
+        });
+    }
+    
+
+// Выполнение поиска
+async function performSearch(searchTerm) {
+    try {
+        const response = await fetchWithTokenCheck(`/api/v2/posts/search?query=${encodeURIComponent(searchTerm)}`);
+        
+        // Если токен истек, response будет null и пользователь уже вышел
+        if (!response) {
+            return; // Прерываем выполнение, так как пользователь уже вышел
+        }
+        
+        if (!response.ok) {
+            throw new Error(`Ошибка поиска: ${response.status}`);
+        }
+        
+        const posts = await response.json();
+        console.log('Результаты поиска:', posts); // Добавим лог для отладки
+        
+        // Проверим, что posts - это массив
+        if (!Array.isArray(posts)) {
+            console.error('Ошибка: полученные данные не являются массивом', posts);
+            return;
+        }
+        
+        // Обновляем ленту постов результатами поиска
+        updatePostsFeed(posts);
+        
+        // Сбрасываем активный фильтр темы
+        AppState.filterTheme = 'all';
+        document.querySelectorAll('.theme-filters-bar .theme-filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector('.theme-filters-bar .theme-filter-btn[data-theme="all"]').classList.add('active');
+        
+    } catch (error) {
+        console.error('Ошибка при поиске постов:', error);
+        
+        // Показываем сообщение об ошибке
+        if (window.notify) {
+            window.notify.error('Ошибка при поиске постов');
+        } else {
+            alert('Ошибка при поиске постов');
+        }
+    }
+}
+
+// Сброс фильтров и возврат к обычному отображению постов
+function resetFilters() {
+    // Сбрасываем фильтр темы к "Все"
+    AppState.filterTheme = 'all';
+    document.querySelectorAll('.theme-filters-bar .theme-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector('.theme-filters-bar .theme-filter-btn[data-theme="all"]').classList.add('active');
+    
+    // Загружаем все посты
+    loadPosts();
+}
+}
+
+console.log('main.js с исправлениями загружен');

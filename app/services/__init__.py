@@ -6,6 +6,7 @@ from app.services.roles import RoleService
 from app.services.reports import ReportService
 from app.services.auth import AuthService
 from app.services.themes import ThemeService
+from app.services.stats import StatsService
 
 __all__ = [
     "UserService",
@@ -15,5 +16,6 @@ __all__ = [
     "RoleService",
     "ReportService",
     "AuthService",
-    "ThemeService"
+    "ThemeService",
+    "StatsService"
 ]

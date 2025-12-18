@@ -3,12 +3,13 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import os
 from pathlib import Path
-from app.api.dependencies import DBDep, get_current_user_id, get_db
+from app.api.dependencies import DBDep, get_current_user_id, get_db, get_token
 from app.services.auth import AuthService
 from app.api.dependencies import DBDep
 from app.services.posts import PostService
 from app.database.db_manager import DBManager
 from app.exceptions.auth import JWTTokenExpiredHTTPError
+from app.services.stats import StatsService
 
 router = APIRouter(prefix="/web", tags=["Фронтенд"])
 
@@ -33,23 +34,49 @@ async def index(request: Request, db: 'DBDep' = None, theme_id: int = None):
     async with DBManager() as db_manager:
         # Получаем посты из базы данных с дополнительной информацией для веб-страницы
         posts = await PostService(db_manager).get_posts_for_web(theme_id=theme_id, limit=10) # Получаем последние 10 постов
+        
+        # Получаем статистику для отображения на главной странице
+        stats_service = StatsService(db_manager)
+        forum_stats = await stats_service.get_forum_stats()
+        theme_stats = await stats_service.get_theme_stats()
 
-    return templates.TemplateResponse("index.html", {"request": request, "posts": posts})
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "posts": posts,
+        "forum_stats": forum_stats,
+        "theme_stats": theme_stats
+    })
 
 # Страница отдельного поста с комментариями
 @router.get("/post/{post_id}", response_class=HTMLResponse)
-async def post_detail(request: Request, post_id: int, db: 'DBDep' = None):
-    async with DBManager() as db_manager:
-        # Получаем пост с комментариями по ID
-        post = await PostService(db_manager).get_post_with_comments(post_id)
-        if not post:
-            raise HTTPException(status_code=404, detail="Пост не найден")
-        
-        return templates.TemplateResponse("post_detail.html", {
-            "request": request,
-            "post": post,
-            "comments": post.get("comments", [])
-        })
+async def post_detail(
+    request: Request,
+    post_id: int,
+    db: DBDep,
+    user_id: int = Depends(get_current_user_id)
+):
+    # Получаем пост с комментариями по ID
+    post = await PostService(db).get_post_with_comments(post_id)
+    if not post:
+        raise HTTPException(status_code=404, detail="Пост не найден")
+    
+    # Проверяем, находится ли пост в избранном у пользователя
+    from app.services.favorites import FavoritesService
+    from app.repositories.favorites import FavoritesRepository
+    from app.repositories.posts import PostsRepository
+    
+    favorites_repo = FavoritesRepository(db.session)
+    posts_repo = PostsRepository(db.session)
+    favorites_service = FavoritesService(favorites_repo, posts_repo)
+    
+    is_favorite = await favorites_service.is_favorite(user_id, post_id)
+    
+    return templates.TemplateResponse("post_detail.html", {
+        "request": request,
+        "post": post,
+        "comments": post.get("comments", []),
+        "is_favorite": is_favorite.is_favorite
+    })
 
 # Страница авторизации
 @router.get("/auth", response_class=HTMLResponse)

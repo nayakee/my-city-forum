@@ -4,6 +4,7 @@ from datetime import datetime
 
 from app.api.dependencies import DBDep, CurrentUserDep, UserIdDep, get_current_user_id
 from app.schemes.posts import SPostAdd
+from app.services.post_reactions import PostReactionService
 
 router = APIRouter(prefix="/api/v2/posts", tags=["Посты v2"])
 
@@ -164,54 +165,155 @@ async def get_posts_detailed_v2(
 async def like_post_v2(
     post_id: int,
     db: DBDep,
+    current_user: int = Depends(get_current_user_id),
 ):
-    """Добавление лайка посту"""
+    """Добавление/удаление лайка посту (один пользователь - один лайк)"""
     try:
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Требуется авторизация")
+
         # Находим пост
         post = await db.posts.get(post_id)
-
         if not post:
             raise HTTPException(status_code=404, detail="Пост не найден")
 
-        # Обновляем количество лайков
-        new_likes = (post.likes or 0) + 1
-        await db.posts.edit({"likes": new_likes}, id=post_id)
+        # Используем сервис реакций
+        result = await PostReactionService.toggle_reaction(
+            db_session=db.session,
+            user_id=current_user,
+            post_id=post_id,
+            reaction_type='like'
+        )
+
+        messages = {
+            "added": "Лайк добавлен",
+            "removed": "Лайк удален",
+            "changed": "Дизлайк изменен на лайк"
+        }
 
         return {
             "status": "OK",
-            "message": "Лайк добавлен",
-            "likes": new_likes
+            "message": messages[result["action"]],
+            "action": result["action"],
+            "likes": result["likes"],
+            "dislikes": result["dislikes"],
+            "user_reaction": result["user_reaction"]
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Ошибка при обработке лайка: {e}")
+        await db.session.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка обработки лайка: {str(e)}")
 
 
 @router.post("/{post_id}/dislike", summary="Дизлайк поста")
 async def dislike_post_v2(
     post_id: int,
     db: DBDep,
+    current_user: int = Depends(get_current_user_id),
 ):
-    """Добавление дизлайка посту"""
+    """Добавление/удаление дизлайка посту (один пользователь - один дизлайк)"""
     try:
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Требуется авторизация")
+
         # Находим пост
         post = await db.posts.get(post_id)
-
         if not post:
             raise HTTPException(status_code=404, detail="Пост не найден")
 
-        # Обновляем количество дизлайков
-        new_dislikes = (post.dislikes or 0) + 1
-        await db.posts.edit({"dislikes": new_dislikes}, id=post_id)
+        # Используем сервис реакций
+        result = await PostReactionService.toggle_reaction(
+            db_session=db.session,
+            user_id=current_user,
+            post_id=post_id,
+            reaction_type='dislike'
+        )
+
+        messages = {
+            "added": "Дизлайк добавлен",
+            "removed": "Дизлайк удален",
+            "changed": "Лайк изменен на дизлайк"
+        }
 
         return {
             "status": "OK",
-            "message": "Дизлайк добавлен",
-            "dislikes": new_dislikes
+            "message": messages[result["action"]],
+            "action": result["action"],
+            "likes": result["likes"],
+            "dislikes": result["dislikes"],
+            "user_reaction": result["user_reaction"]
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Ошибка при обработке дизлайка: {e}")
+        await db.session.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка обработки дизлайка: {str(e)}")
+
+
+@router.get("/{post_id}/reaction", summary="Получение реакции пользователя на пост")
+async def get_user_reaction(
+    post_id: int,
+    db: DBDep,
+    current_user: int = Depends(get_current_user_id),
+):
+    """Получает реакцию текущего пользователя на пост"""
+    try:
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Требуется авторизация")
+
+        result = await PostReactionService.get_user_reaction(
+            db_session=db.session,
+            user_id=current_user,
+            post_id=post_id
+        )
+
+        return {
+            "status": "OK",
+            "reaction_type": result["reaction_type"],
+            "has_liked": result["has_liked"],
+            "has_disliked": result["has_disliked"],
+            "likes": result["likes"],
+            "dislikes": result["dislikes"]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Ошибка при получении реакции: {e}")
+        raise HTTPException(status_code=500, detail=f"Ошибка получения реакции: {str(e)}")
+
+
+@router.get("/{post_id}/stats", summary="Получение статистики поста")
+async def get_post_stats(
+    post_id: int,
+    db: DBDep,
+):
+    """Получает статистику лайков/дизлайков поста"""
+    try:
+        result = await PostReactionService.get_post_stats(
+            db_session=db.session,
+            post_id=post_id
+        )
+
+        return {
+            "status": "OK",
+            "likes": result["likes"],
+            "dislikes": result["dislikes"],
+            "total_liked_by": result["total_liked_by"],
+            "total_disliked_by": result["total_disliked_by"],
+            "total_reactions": result["total_reactions"]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Ошибка при получении статистики: {e}")
+        raise HTTPException(status_code=500, detail=f"Ошибка получения статистики: {str(e)}")
 
 
 @router.delete("/{post_id}", summary="Удаление поста")
@@ -246,3 +348,57 @@ async def delete_post_v2(
     except Exception as e:
         print(f"Ошибка при удалении поста: {e}")
         raise HTTPException(status_code=500, detail=f"Ошибка удаления поста: {str(e)}")
+
+
+@router.get("/search", summary="Поиск постов")
+async def search_posts(
+    query: str,
+    db: DBDep,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000)
+):
+    """Поиск постов по заголовку и содержанию"""
+    try:
+        if len(query.strip()) < 1:
+            # Если запрос пустой, возвращаем пустой результат
+            return []
+            
+        # Ищем посты с помощью репозитория
+        posts = await db.posts.search(
+            search_term=query.strip(),
+            skip=skip,
+            limit=limit
+        )
+        
+        # Преобразуем в словари и добавляем информацию о пользователях, темах и комментариях
+        posts_list = []
+        for post in posts:
+            # Получаем информацию о пользователе и теме
+            user = await db.users.get(post.user_id)
+            theme = await db.themes.get(post.theme_id)
+            
+            # Получаем комментарии к посту для подсчета
+            comments = await db.comments.get_filtered(post_id=post.id)
+            
+            post_dict = {
+                "id": post.id,
+                "header": post.header,
+                "body": post.body,
+                "theme_id": post.theme_id,
+                "community_id": post.community_id,
+                "user_id": post.user_id,
+                "likes": post.likes or 0,
+                "dislikes": post.dislikes or 0,
+                "created_at": post.created_at,
+                "user_name": user.name if user else "Аноним",
+                "theme_name": theme.name if theme else "Без темы",
+                "comments_count": len(comments)
+            }
+            posts_list.append(post_dict)
+            
+        print(f"Найдено постов по запросу '{query}': {len(posts_list)}") # Добавим лог для отладки
+        return posts_list
+        
+    except Exception as e:
+        print(f"Ошибка при поиске постов: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

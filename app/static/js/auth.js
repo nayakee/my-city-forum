@@ -125,8 +125,13 @@ async function handleLogin(e) {
     const password = document.getElementById('login-password').value;
     
     // Валидация
-    if (!email || !password) {
-        notify.error('Заполните все поля');
+    if (!email || email.trim() === '') {
+        notify.error('Введите email');
+        return;
+    }
+    
+    if (!password) {
+        notify.error('Введите пароль');
         return;
     }
     
@@ -202,8 +207,23 @@ async function handleRegister(e) {
     const confirmPassword = document.getElementById('confirm-password').value;
     
     // Валидация
-    if (!name || !email || !password || !confirmPassword) {
-        notify.error('Заполните все поля');
+    if (!name || name.trim() === '') {
+        notify.error('Введите имя');
+        return;
+    }
+    
+    if (!email || email.trim() === '') {
+        notify.error('Введите email');
+        return;
+    }
+    
+    if (!password) {
+        notify.error('Введите пароль');
+        return;
+    }
+    
+    if (!confirmPassword) {
+        notify.error('Подтвердите пароль');
         return;
     }
     

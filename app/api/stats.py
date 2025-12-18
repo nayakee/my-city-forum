@@ -1,13 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.database.db_manager import DBManager
+from app.services.stats import StatsService
+from app.api.dependencies import get_db
 
 router = APIRouter(prefix="/stats", tags=["Статистика"])
 
 @router.get("", summary="Общая статистика")
-async def get_stats():
-    # В реальном приложении здесь будет логика получения статистики из базы данных
-    return {
-        "total_posts": 0,
-        "total_users": 0,
-        "total_communities": 0,
-        "total_themes": 0
-    }
+async def get_stats(db: DBManager = Depends(get_db)):
+    stats_service = StatsService(db)
+    stats = await stats_service.get_forum_stats()
+    return stats

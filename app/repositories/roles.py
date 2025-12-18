@@ -29,3 +29,15 @@ class RolesRepository(BaseRepository):
 
         result = SRoleGetWithRels.model_validate(model, from_attributes=True)
         return result
+
+    async def check_name_exists_excluding_current(self, name: str, current_role_id: int) -> bool:
+        """
+        Check if a role name already exists in the database, excluding the current role
+        """
+        query = select(self.model).filter(
+            self.model.name == name,
+            self.model.id != current_role_id
+        )
+        result = await self.session.execute(query)
+        existing_role = result.scalars().first()
+        return existing_role is not None

@@ -6,8 +6,9 @@
     <title>Мой Город - Форум</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Ключевое исправление: предотвращение изменения дизайна */
+        /* ТОЛЬКО СТРУКТУРНЫЕ СТИЛИ БЕЗ ШРИФТОВ */
         * {
             box-sizing: border-box;
         }
@@ -18,9 +19,9 @@
             position: relative;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            line-height: 1.5;
         }
         
-        /* Фиксируем основные блоки */
         .header, .footer, .main-theme-filters-container {
             position: relative;
             z-index: 100;
@@ -32,7 +33,7 @@
             position: relative;
         }
         
-        /* Кнопки фильтрации тем - над лентой */
+        /* Кнопки фильтрации тем */
         .theme-filters-bar {
             display: flex;
             justify-content: center;
@@ -46,6 +47,83 @@
             padding: 10px 0;
         }
         
+        /* СТИЛИ ДЛЯ КНОПОК ГОЛОСОВАНИЯ */
+        .vote-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .vote-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #64748b;
+            transition: all 0.2s ease;
+        }
+        
+        .vote-btn:hover {
+            background: #f8fafc;
+        }
+        
+        .vote-btn.like:hover {
+            color: #2e7d32;
+            border-color: #2e7d32;
+        }
+        
+        .vote-btn.dislike:hover {
+            color: #d32f2f;
+            border-color: #d32f2f;
+        }
+        
+        .vote-btn.active-like {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-color: #2e7d32;
+            color: #2e7d32;
+            font-weight: 600;
+        }
+        
+        .vote-btn.active-dislike {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-color: #d32f2f;
+            color: #d32f2f;
+            font-weight: 600;
+        }
+        
+        .vote-count {
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .vote-btn i {
+            font-size: 14px;
+        }
+        
+        /* КЛИКАБЕЛЬНЫЕ ПОСТЫ */
+        .post {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .post:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .post-menu-btn {
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        /* Кнопки фильтрации тем */
         .theme-filters-bar .theme-filter-btn {
             padding: 10px 20px;
             border: 2px solid #e2e8f0;
@@ -60,7 +138,6 @@
             align-items: center;
             gap: 8px;
             white-space: nowrap;
-            font-family: 'Inter', sans-serif;
         }
         
         .theme-filters-bar .theme-filter-btn:hover {
@@ -142,11 +219,11 @@
             color: white;
         }
         
-        .theme-filters-bar .theme-filter-btn i {
+        .theme-filters-bar i {
             font-size: 14px;
         }
         
-        /* Стили для кнопок выбора темы при создании поста */
+        /* Кнопки выбора темы */
         .theme-selection-buttons {
             display: flex;
             gap: 10px;
@@ -169,7 +246,6 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            font-family: 'Inter', sans-serif;
         }
         
         .theme-selection-buttons .theme-btn:hover {
@@ -233,7 +309,7 @@
             color: white;
         }
         
-        /* Контейнер для кнопок фильтрации под шапкой */
+        /* Контейнер для кнопок фильтрации */
         .main-theme-filters-container {
             display: flex;
             justify-content: center;
@@ -246,7 +322,7 @@
             background: white;
         }
         
-        /* Стили для уведомлений */
+        /* Уведомления */
         .alert {
             padding: 1rem;
             border-radius: 8px;
@@ -275,7 +351,7 @@
             color: #d32f2f;
         }
         
-        /* Стили для формы создания поста */
+        /* Форма создания поста */
         .create-post-card {
             background: white;
             border-radius: 12px;
@@ -307,7 +383,7 @@
             font-weight: 600;
         }
         
-        /* Лента постов - фиксируем поведение */
+        /* Лента постов */
         .posts-feed {
             position: relative;
             min-height: 300px;
@@ -322,10 +398,10 @@
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            border-left: 4px solid #2e7d32; /* Цветная линия для темы по умолчанию */
+            border-left: 4px solid #2e7d32;
         }
         
-        /* Цветные линии для разных тем постов */
+        /* Цветные линии для тем постов */
         .post[data-theme="новости"] {
             border-left-color: #2196F3;
         }
@@ -338,7 +414,7 @@
             border-left-color: #9c27b0;
         }
         
-        /* Стили для трех точек в правом верхнем углу */
+        /* Стили для трех точек */
         .post-menu-btn {
             position: absolute;
             top: 15px;
@@ -418,7 +494,7 @@
             width: 16px;
         }
         
-        /* Модальное окно для удаления */
+        /* Модальное окно */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -479,7 +555,7 @@
             display: none !important;
         }
         
-        /* Стили для заголовков тем постов */
+        /* Заголовки тем постов */
         .post-theme {
             display: inline-block;
             padding: 4px 12px;
@@ -544,9 +620,14 @@
             .post-menu-dropdown {
                 min-width: 180px;
             }
+            
+            .vote-btn {
+                padding: 4px 8px;
+                font-size: 0.8rem;
+            }
         }
         
-        /* Специальные стили для ссылок авторизации */
+        /* Специальные стили для ссылок */
         .auth-buttons a.btn {
             text-decoration: none !important;
         }
@@ -634,8 +715,82 @@
                 </button>
             </div>
         </div>
+        
+        <!-- Поиск постов -->
+        <div class="container">
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <input type="text" id="search-input" class="form-control" placeholder="Поиск по постам...">
+                    <button id="search-button" class="search-button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-
+    
+    <!-- Стили для поиска -->
+    <style>
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .search-input-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        #search-input {
+            width: 100%;
+            padding: 12px 45px 12px 20px; /* Добавлено место для кнопки */
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        #search-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .search-button {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .search-button:hover {
+            background: #45a049;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+    </style>
+    
     <!-- Основной контент -->
     <main class="container">
         <!-- Основной грид -->
@@ -719,7 +874,7 @@
                 <div class="posts-feed" id="posts-feed">
                     {% for post in posts %}
                     <div class="post {{ post.theme_name|lower if post.theme_name else 'general' }}" data-theme="{{ post.theme_name|lower if post.theme_name else 'general' }}" id="post-{{ post.id }}">
-                        <!-- Кнопка меню поста (три точки) -->
+                        <!-- Кнопка меню поста -->
                         <button class="post-menu-btn" onclick="togglePostMenu('{{ post.id }}')" data-post-id="{{ post.id }}">
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
@@ -749,13 +904,16 @@
                         </div>
                         <div class="post-actions">
                             <div class="vote-buttons">
-                                <button class="vote-btn like {% if post.likes > 0 %}active-like{% endif %}" data-post-id="{{ post.id }}">
+                                <button class="vote-btn like" data-post-id="{{ post.id }}">
                                     <i class="fas fa-thumbs-up"></i>
                                     <span class="vote-count">{{ post.likes or 0 }}</span>
                                 </button>
-                                <button class="vote-btn dislike {% if post.dislikes > 0 %}active-dislike{% endif %}" data-post-id="{{ post.id }}">
+                                <button class="vote-btn dislike" data-post-id="{{ post.id }}">
                                     <i class="fas fa-thumbs-down"></i>
                                     <span class="vote-count">{{ post.dislikes or 0 }}</span>
+                                </button>
+                                <button class="vote-btn favorite" data-post-id="{{ post.id }}">
+                                    <i class="fas fa-star"></i>
                                 </button>
                             </div>
                             <button class="btn" onclick="showComments('{{ post.id }}')">
@@ -796,19 +954,19 @@
                     <div class="sidebar-stats" id="forum-stats">
                         <div class="stat-row">
                             <span class="stat-label">Пользователей</span>
-                            <span class="stat-value">1,247</span>
+                            <span class="stat-value">{{ "{:,}".format(forum_stats.total_users) if forum_stats else 0 }}</span>
                         </div>
                         <div class="stat-row">
                             <span class="stat-label">Постов</span>
-                            <span class="stat-value">5,892</span>
+                            <span class="stat-value">{{ "{:,}".format(forum_stats.total_posts) if forum_stats else 0 }}</span>
                         </div>
                         <div class="stat-row">
                             <span class="stat-label">Комментариев</span>
-                            <span class="stat-value">24,156</span>
+                            <span class="stat-value">{{ "{:,}".format(forum_stats.total_comments) if forum_stats else 0 }}</span>
                         </div>
                         <div class="stat-row">
                             <span class="stat-label">Лайков/Дизлайков</span>
-                            <span class="stat-value">18,924</span>
+                            <span class="stat-value">{{ "{:,}".format(forum_stats.total_reactions) if forum_stats else 0 }}</span>
                         </div>
                     </div>
                 </div>
@@ -826,7 +984,7 @@
                             </div>
                             <div class="theme-info">
                                 <div class="theme-stat-name">Новости</div>
-                                <div class="theme-count" id="news-count">0 постов</div>
+                                <div class="theme-count" id="news-count">{{ theme_stats.news_count if theme_stats and 'news_count' in theme_stats else 0 }} постов</div>
                             </div>
                         </div>
                         <div class="theme-item">
@@ -835,7 +993,7 @@
                             </div>
                             <div class="theme-info">
                                 <div class="theme-stat-name">Недвижимость</div>
-                                <div class="theme-count" id="realestate-count">0 постов</div>
+                                <div class="theme-count" id="realestate-count">{{ theme_stats.realestate_count if theme_stats and 'realestate_count' in theme_stats else 0 }} постов</div>
                             </div>
                         </div>
                         <div class="theme-item">
@@ -844,7 +1002,7 @@
                             </div>
                             <div class="theme-info">
                                 <div class="theme-stat-name">Работа</div>
-                                <div class="theme-count" id="job-count">0 постов</div>
+                                <div class="theme-count" id="job-count">{{ theme_stats.job_count if theme_stats and 'job_count' in theme_stats else 0 }} постов</div>
                             </div>
                         </div>
                     </div>
@@ -938,7 +1096,6 @@
     </div>
 
     <!-- Подключаем скрипты -->
-    <!-- Добавьте notifications.js перед main.js -->
     <script src="/static/js/notifications.js"></script>
     <script src="/static/js/main.js"></script>
 </body>

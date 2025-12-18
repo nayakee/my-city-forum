@@ -14,7 +14,6 @@ class UsersRepository(BaseRepository):
     async def get_one_or_none_with_role(self, **filter_by):
         query = select(self.model)
         
-        # Применяем фильтрацию по именованным параметрам
         for key, value in filter_by.items():
             if hasattr(self.model, key) and value is not None:
                 query = query.filter(getattr(self.model, key) == value)
@@ -33,7 +32,6 @@ class UsersRepository(BaseRepository):
     async def get_one_or_none_with_role_and_communities(self, **filter_by):
         query = select(self.model)
         
-        # Применяем фильтрацию по именованным параметрам
         for key, value in filter_by.items():
             if hasattr(self.model, key) and value is not None:
                 query = query.filter(getattr(self.model, key) == value)
@@ -46,6 +44,5 @@ class UsersRepository(BaseRepository):
         if model is None:
             return None
 
-        # Convert the model to a dictionary first to ensure proper serialization
         result = SUserGetWithRelsAndCommunities.model_validate(model, from_attributes=True)
         return result

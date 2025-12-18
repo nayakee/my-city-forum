@@ -1,13 +1,6 @@
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from app.models.communities import CommunityModel
-from app.repositories.base import BaseRepository
-
-
-from typing import Optional, List
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
 
 from app.models.communities import CommunityModel
 from app.repositories.base import BaseRepository
@@ -52,7 +45,7 @@ class CommunitiesRepository(BaseRepository):
     async def get_popular(
         self, 
         skip: int = 0, 
-        limit: int = 100
+        limit: int = 10
     ) -> List[CommunityModel]:
         """Получение популярных сообществ (по количеству участников)"""
         query = (

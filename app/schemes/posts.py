@@ -38,3 +38,27 @@ class SPostGet(SPostBase):
 
 class SPostGetWithComments(SPostGet):
     comments_count: int = 0
+
+class PostReactionResponse(BaseModel):
+    status: str
+    message: str
+    action: str
+    likes: int
+    dislikes: int
+    user_reaction: Optional[str] = None
+
+class UserReactionResponse(BaseModel):
+    status: str
+    reaction_type: Optional[str]
+    has_liked: bool
+    has_disliked: bool
+    likes: int
+    dislikes: int
+
+class PostStatsResponse(BaseModel):
+    status: str
+    likes: int
+    dislikes: int
+    total_liked_by: int
+    total_disliked_by: int
+    total_reactions: int

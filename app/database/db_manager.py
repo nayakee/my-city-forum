@@ -60,6 +60,7 @@ class DBManager:
         self.roles = None
         self.posts = None
         self.comments = None
+        self.post_reactions = None
         self.communities = None
         self.reports = None
         self.themes = None
@@ -83,6 +84,7 @@ class DBManager:
             'roles': self.roles,
             'posts': self.posts,
             'comments': self.comments,
+            'post_reactions': self.post_reactions,
             'communities': self.communities,
             'reports': self.reports,
             'themes': self.themes,

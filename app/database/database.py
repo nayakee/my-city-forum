@@ -53,10 +53,11 @@ async def create_tables():
     from app.models.user_communities import UserCommunityModel
     from app.models.themes import ThemeModel
     from app.models.reports import ReportModel
+    from app.models.favorites import FavoritePostModel
     
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    print("✅ Таблицы базы данных созданы")
+    print("Tables created successfully")
 
 
 async def drop_tables():
@@ -70,10 +71,11 @@ async def drop_tables():
     from app.models.user_communities import UserCommunityModel
     from app.models.themes import ThemeModel
     from app.models.reports import ReportModel
+    from app.models.favorites import FavoritePostModel
     
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    print("🗑️  Таблицы базы данных удалены")
+    print("Tables dropped successfully")
 
 
 def create_sync_engine():

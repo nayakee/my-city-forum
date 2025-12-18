@@ -19,6 +19,7 @@ from app.schemes.relations_users_roles import SUserGetWithRels
 from app.services.base import BaseService
 import jwt
 from passlib.context import CryptContext
+from pydantic import ValidationError
 
 
 class AuthService(BaseService):
@@ -53,6 +54,7 @@ class AuthService(BaseService):
 
     async def register_user(self, user_data: SUserAddRequest):
         try:
+            # Проверяем валидность данных пользователя (Pydantic уже делает валидацию)
             hashed_password: str = self.hash_password(user_data.password)
             new_user_data = SUserAdd(
                 email=user_data.email,
@@ -63,6 +65,9 @@ class AuthService(BaseService):
             await self.db.users.add(new_user_data)
         except ObjectAlreadyExistsError:
             raise UserAlreadyExistsError
+        except ValidationError as ve:
+            # Обработка ошибок валидации Pydantic
+            raise ValueError(f"Ошибка валидации: {ve.errors()[0]['msg']}")
         await self.db.commit()
 
     async def login_user(self, user_data: SUserAuth):

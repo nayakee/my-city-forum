@@ -26,7 +26,12 @@ class RoleService(BaseService):
         role: SRoleGetWithRels | None = await self.db.roles.get_one_or_none(id=role_id)
         if not role:
             raise RoleNotFoundError
-        await self.db.roles.edit(role_data)
+        
+        # Check if the new name already exists for another role
+        if await self.db.roles.check_name_exists_excluding_current(name=role_data.name, current_role_id=role_id):
+            raise RoleAlreadyExistsError
+            
+        await self.db.roles.edit(role_data, **{"id": role_id})
         await self.db.commit()
         return
 

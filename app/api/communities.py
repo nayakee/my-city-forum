@@ -8,7 +8,7 @@ from app.exceptions.communities import (
     CommunityAlreadyExistsError,
     CommunityAlreadyExistsHTTPError
 )
-from app.schemes.communities import SCommunityAdd, SCommunityUpdate, SCommunityGet
+from app.schemes.communities import SCommunityAdd, SCommunityUpdate, SCommunityGet, SCommunityGetWithMembership
 from app.services.communities import CommunitiesService
 
 router = APIRouter(prefix="/communities", tags=["Сообщества"])
@@ -33,13 +33,28 @@ async def get_communities(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     search: Optional[str] = None,
-) -> List[SCommunityGet]:
-    communities = await CommunitiesService(db).get_communities(
-        skip=skip,
-        limit=limit,
-        search=search
-    )
-    return communities
+    user_id: Optional[int] = Depends(get_current_user_id),
+) -> List[SCommunityGetWithMembership]:
+    service = CommunitiesService(db)
+    if user_id:
+        communities_data = await service.get_communities_with_membership(
+            user_id=user_id,
+            skip=skip,
+            limit=limit,
+            search=search
+        )
+        # Преобразуем словари в объекты Pydantic
+        return [SCommunityGetWithMembership(**data) for data in communities_data]
+    else:
+        # Если пользователь не авторизован, возвращаем обычные сообщества без информации о членстве
+        communities = await service.get_communities(skip=skip, limit=limit, search=search)
+        # Преобразуем в объекты Pydantic с is_joined=False по умолчанию
+        result = []
+        for community in communities:
+            community_dict = community.__dict__.copy()
+            community_dict['is_joined'] = False
+            result.append(SCommunityGetWithMembership(**community_dict))
+        return result
 
 
 @router.get("/{community_id}", summary="Получение конкретного сообщества")

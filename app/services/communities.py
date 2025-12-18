@@ -53,6 +53,28 @@ class CommunitiesService:
                 limit=limit
             )
 
+    async def get_communities_with_membership(
+        self,
+        user_id: int,
+        skip: int = 0,
+        limit: int = 100,
+        search: Optional[str] = None
+    ) -> List[dict]:
+        """Получение списка сообществ с информацией о членстве пользователя"""
+        communities = await self.get_communities(skip, limit, search)
+        
+        # Получаем список сообществ, в которых состоит пользователь
+        user_community_records = await self.db.user_communities.get_filtered(user_id=user_id)
+        user_community_ids = {record.community_id for record in user_community_records}
+        
+        result = []
+        for community in communities:
+            community_dict = community.__dict__
+            community_dict['is_joined'] = community.id in user_community_ids
+            result.append(community_dict)
+        
+        return result
+
     async def update_community(
         self,
         community_id: int,

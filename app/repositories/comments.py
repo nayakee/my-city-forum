@@ -1,13 +1,6 @@
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from app.models.comments import CommentModel
-from app.repositories.base import BaseRepository
-
-
-from typing import List
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
 
 from app.models.comments import CommentModel
 from app.repositories.base import BaseRepository

@@ -589,12 +589,18 @@
             if (community.image) {
                 // Если есть изображение, используем его внутри белого круга
                 // Добавляем обработчик ошибок для картинки
-                iconHtml = `<img src="${community.image}" alt="${community.name}" class="community-image" 
+                iconHtml = `<img src="${community.image}" alt="${community.name}" class="community-image"
                     onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas ${iconClass} community-icon\'></i>';">`;
             } else {
                 // Если нет изображения, используем иконку
                 iconHtml = `<i class="fas ${iconClass} community-icon"></i>`;
             }
+            
+            // Определяем начальное состояние кнопки на основе is_joined
+            const isJoined = community.is_joined || false;
+            const joinBtnClass = isJoined ? 'join-btn joined' : 'join-btn';
+            const joinBtnIcon = isJoined ? 'fa-check' : 'fa-user-plus';
+            const joinBtnText = isJoined ? 'Вы в сообществе' : 'Присоединиться';
             
             card.innerHTML = `
                 <div class="community-header">
@@ -621,9 +627,9 @@
                         <a href="/web/communities/${community.id}" class="community-link-btn">
                             Перейти к сообществу
                         </a>
-                        <button class="join-btn" data-community-id="${community.id}">
-                            <i class="fas fa-user-plus"></i>
-                            Присоединиться
+                        <button class="${joinBtnClass}" data-community-id="${community.id}">
+                            <i class="fas ${joinBtnIcon}"></i>
+                            ${joinBtnText}
                         </button>
                     </div>
                 </div>

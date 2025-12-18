@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from starlette.responses import Response
 
 from app.api.dependencies import DBDep, UserIdDep
@@ -26,6 +26,9 @@ async def register_user(
         await AuthService(db).register_user(user_data)
     except UserAlreadyExistsError:
         raise UserAlreadyExistsHTTPError
+    except ValueError as e:
+        # Обработка ошибок валидации
+        raise HTTPException(status_code=422, detail=str(e))
     return {"status": "OK"}
 
 
@@ -41,6 +44,9 @@ async def login_user(
         raise UserNotFoundHTTPError
     except InvalidPasswordError:
         raise InvalidPasswordHTTPError
+    except ValueError as e:
+        # Обработка ошибок валидации
+        raise HTTPException(status_code=42, detail=str(e))
     response.set_cookie("access_token", access_token)
     return {"access_token": access_token}
 

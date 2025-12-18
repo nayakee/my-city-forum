@@ -157,19 +157,96 @@ class PostService:
             from app.services.communities import CommunitiesService
             await CommunitiesService(self.db).decrement_posts_count(community_id)
 
-    async def like_post(self, post_id: int) -> None:
-        """Добавление лайка посту"""
+    async def toggle_post_reaction(self, user_id: int, post_id: int, reaction_type: str) -> dict:
+        """Toggle like/dislike for a post by a user"""
+        # Validate reaction type
+        if reaction_type not in ['like', 'dislike']:
+            raise ValueError("Reaction type must be 'like' or 'dislike'")
+        
+        # Get current user's reaction to this post
+        current_reaction = await self.db.post_reactions.get_user_reaction(user_id, post_id)
+        
+        # Get the post
         post = await self.db.posts.get(post_id)
-        if post:
-            update_data = {"likes": (post.likes or 0) + 1}
-            await self.db.posts.edit(update_data, id=post_id)
-
-    async def dislike_post(self, post_id: int) -> None:
-        """Добавление дизлайка посту"""
-        post = await self.db.posts.get(post_id)
-        if post:
-            update_data = {"dislikes": (post.dislikes or 0) + 1}
-            await self.db.posts.edit(update_data, id=post_id)
+        if not post:
+            raise ValueError("Post not found")
+        
+        # Initialize result
+        result = {
+            "post_id": post_id,
+            "user_id": user_id,
+            "reaction_type": reaction_type,
+            "action": None,  # 'added', 'removed', 'switched'
+            "likes_count": post.likes,
+            "dislikes_count": post.dislikes
+        }
+        
+        if current_reaction:
+            # If user already has a reaction to this post
+            if current_reaction.reaction_type == reaction_type:
+                # User is toggling off their current reaction
+                await self.db.post_reactions.delete_user_reaction(user_id, post_id)
+                
+                # Update post counts based on reaction type
+                if reaction_type == 'like':
+                    new_likes = max(0, post.likes - 1)  # Ensure non-negative
+                    await self.db.posts.edit({"likes": new_likes}, id=post_id)
+                    result["likes_count"] = new_likes
+                else:  # dislike
+                    new_dislikes = max(0, post.dislikes - 1)  # Ensure non-negative
+                    await self.db.posts.edit({"dislikes": new_dislikes}, id=post_id)
+                    result["dislikes_count"] = new_dislikes
+                    
+                result["action"] = "removed"
+            else:
+                # User is switching from one reaction to another
+                # Remove the old reaction and add the new one
+                old_reaction_type = current_reaction.reaction_type
+                
+                # Update the existing reaction type
+                await self.db.post_reactions.update_reaction_type(
+                    user_id=user_id,
+                    post_id=post_id,
+                    new_reaction_type=reaction_type
+                )
+                
+                # Update post counts: remove old, add new
+                updates = {}
+                if old_reaction_type == 'like':
+                    updates["likes"] = max(0, post.likes - 1)
+                    updates["dislikes"] = post.dislikes + 1
+                    result["likes_count"] = updates["likes"]
+                    result["dislikes_count"] = updates["dislikes"]
+                else:  # old was dislike
+                    updates["likes"] = post.likes + 1
+                    updates["dislikes"] = max(0, post.dislikes - 1)
+                    result["likes_count"] = updates["likes"]
+                    result["dislikes_count"] = updates["dislikes"]
+                
+                await self.db.posts.edit(updates, id=post_id)
+                result["action"] = "switched"
+        else:
+            # User is adding a new reaction
+            reaction_data = {
+                "user_id": user_id,
+                "post_id": post_id,
+                "reaction_type": reaction_type
+            }
+            await self.db.post_reactions.add(reaction_data)
+            
+            # Update post counts based on reaction type
+            if reaction_type == 'like':
+                new_likes = post.likes + 1
+                await self.db.posts.edit({"likes": new_likes}, id=post_id)
+                result["likes_count"] = new_likes
+            else:  # dislike
+                new_dislikes = post.dislikes + 1
+                await self.db.posts.edit({"dislikes": new_dislikes}, id=post_id)
+                result["dislikes_count"] = new_dislikes
+            
+            result["action"] = "added"
+        
+        return result
 
 # app/services/posts.py (дополнение к ранее созданному)
 

@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
 
 from datetime import datetime
-from sqlalchemy import String, ForeignKey, Integer, DateTime
+import json
+from sqlalchemy import String, ForeignKey, Integer, DateTime, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.database import Base
 
@@ -31,3 +32,95 @@ class PostModel(Base):
     theme: Mapped["ThemeModel"] = relationship(back_populates="posts")
     comments: Mapped[list["CommentModel"]] = relationship(back_populates="post", cascade="all, delete-orphan")
     community: Mapped["CommunityModel"] = relationship(back_populates="posts")
+
+     # JSON поле для хранения реакций в SQLite
+    reactions_data: Mapped[str] = mapped_column(Text, default='{"liked_by": [], "disliked_by": []}', nullable=True)
+
+    user: Mapped["UserModel"] = relationship(back_populates="posts")
+    theme: Mapped["ThemeModel"] = relationship(back_populates="posts")
+    comments: Mapped[list["CommentModel"]] = relationship(back_populates="post", cascade="all, delete-orphan")
+    community: Mapped["CommunityModel"] = relationship(back_populates="posts")
+    
+    # Вспомогательные свойства для работы с JSON
+    @property
+    def reactions_dict(self):
+        """Возвращает реакции как словарь Python"""
+        try:
+            if self.reactions_data:
+                return json.loads(self.reactions_data)
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return {"liked_by": [], "disliked_by": []}
+    
+    @reactions_dict.setter
+    def reactions_dict(self, value):
+        """Устанавливает реакции из словаря Python"""
+        self.reactions_data = json.dumps(value)
+    
+    def has_user_liked(self, user_id: int) -> bool:
+        """Проверяет, лайкал ли пользователь пост"""
+        reactions = self.reactions_dict
+        return user_id in reactions.get("liked_by", [])
+    
+    def has_user_disliked(self, user_id: int) -> bool:
+        """Проверяет, дизлайкал ли пользователь пост"""
+        reactions = self.reactions_dict
+        return user_id in reactions.get("disliked_by", [])
+    
+    def add_like(self, user_id: int):
+        """Добавляет лайк пользователя"""
+        reactions = self.reactions_dict
+        
+        # Убираем из дизлайков если был там
+        if user_id in reactions.get("disliked_by", []):
+            reactions["disliked_by"].remove(user_id)
+            self.dislikes = max(0, (self.dislikes or 0) - 1)
+        
+        # Добавляем в лайки если еще нет
+        if user_id not in reactions.get("liked_by", []):
+            reactions["liked_by"].append(user_id)
+            self.likes = (self.likes or 0) + 1
+        
+        self.reactions_dict = reactions
+    
+    def remove_like(self, user_id: int):
+        """Убирает лайк пользователя"""
+        reactions = self.reactions_dict
+        
+        if user_id in reactions.get("liked_by", []):
+            reactions["liked_by"].remove(user_id)
+            self.likes = max(0, (self.likes or 0) - 1)
+            self.reactions_dict = reactions
+    
+    def add_dislike(self, user_id: int):
+        """Добавляет дизлайк пользователя"""
+        reactions = self.reactions_dict
+        
+        # Убираем из лайков если был там
+        if user_id in reactions.get("liked_by", []):
+            reactions["liked_by"].remove(user_id)
+            self.likes = max(0, (self.likes or 0) - 1)
+        
+        # Добавляем в дизлайки если еще нет
+        if user_id not in reactions.get("disliked_by", []):
+            reactions["disliked_by"].append(user_id)
+            self.dislikes = (self.dislikes or 0) + 1
+        
+        self.reactions_dict = reactions
+    
+    def remove_dislike(self, user_id: int):
+        """Убирает дизлайк пользователя"""
+        reactions = self.reactions_dict
+        
+        if user_id in reactions.get("disliked_by", []):
+            reactions["disliked_by"].remove(user_id)
+            self.dislikes = max(0, (self.dislikes or 0) - 1)
+            self.reactions_dict = reactions
+    
+    def get_user_reaction(self, user_id: int) -> str | None:
+        """Получает реакцию пользователя ('like', 'dislike' или None)"""
+        if self.has_user_liked(user_id):
+            return 'like'
+        elif self.has_user_disliked(user_id):
+            return 'dislike'
+        return None

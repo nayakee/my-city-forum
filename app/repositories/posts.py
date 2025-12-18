@@ -1,13 +1,6 @@
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func
-from app.models.posts import PostModel
-from app.repositories.base import BaseRepository
-
-
-from typing import Optional, List
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, func
 
 from app.models.posts import PostModel
 from app.repositories.base import BaseRepository
@@ -75,17 +68,21 @@ class PostsRepository(BaseRepository):
         return result.scalars().all()
 
     async def search(
-        self, 
+        self,
         search_term: str,
-        skip: int = 0, 
+        skip: int = 0,
         limit: int = 100
     ) -> List[PostModel]:
         """Поиск постов по заголовку или содержанию"""
+        from sqlalchemy import or_
+        # Используем % для обозначения любого количества символов до и после search_term
         query = (
             select(PostModel)
             .where(
-                PostModel.header.ilike(f"%{search_term}%") |
-                PostModel.body.ilike(f"%{search_term}%")
+                or_(
+                    PostModel.header.ilike(f"%{search_term}%"),
+                    PostModel.body.ilike(f"%{search_term}%")
+                )
             )
             .order_by(desc(PostModel.created_at))
             .offset(skip)

@@ -12,6 +12,7 @@ from app.models.communities import CommunityModel
 from app.models.user_communities import UserCommunityModel
 from app.models.themes import ThemeModel
 from app.models.reports import ReportModel
+from app.models.favorites import FavoritePostModel
 
 from app.api.sample import router as sample_router
 from app.api.auth import router as auth_router
@@ -19,10 +20,11 @@ from app.api.roles import router as role_router
 from app.api.web import router as web_router
 from app.api.communities import router as community_router
 from app.api.comments import router as comment_router
-from app.api.posts import router as post_router
 from app.api.reports import router as report_router
 from app.api.themes import router as theme_router
 from app.api.simple_posts import router as simple_post_router
+from app.api.favorites import router as favorites_router
+from app.api.stats import router as stats_router
 
 from app.exceptions.auth import JWTTokenExpiredHTTPError
 
@@ -49,10 +51,11 @@ app.include_router(role_router)
 app.include_router(web_router)
 app.include_router(community_router)
 app.include_router(comment_router)
-app.include_router(post_router)
 app.include_router(report_router)
 app.include_router(theme_router)
 app.include_router(simple_post_router)
+app.include_router(favorites_router)
+app.include_router(stats_router)
 
 @app.get("/")
 async def root_redirect():

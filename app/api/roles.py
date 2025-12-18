@@ -42,7 +42,7 @@ async def get_role(
 
 
 @router.put("/roles/{id}", summary="Изменение конкретной роли")
-async def get_role(
+async def update_role(
     db: DBDep,
     role_data: SRoleAdd,
     id: int,
@@ -51,6 +51,8 @@ async def get_role(
         await RoleService(db).edit_role(role_id=id, role_data=role_data)
     except RoleNotFoundError:
         raise RoleNotFoundHTTPError
+    except RoleAlreadyExistsError:
+        raise RoleAlreadyExistsHTTPError
 
     return {"status": "OK"}
 

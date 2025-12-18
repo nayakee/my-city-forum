@@ -9,6 +9,9 @@ if TYPE_CHECKING:
     from app.models.users import UserModel
 
 
+
+
+
 # Enum для типов контента
 class ReportContentTypeEnum(enum.Enum):
     POST = "post"
@@ -62,12 +65,12 @@ class ReportModel(Base):
     
     # Связи
     reporter: Mapped["UserModel"] = relationship(
-        "UserModel", 
+        "UserModel",
         foreign_keys=[reporter_id],
         back_populates="reports_made"
     )
     moderator: Mapped["UserModel"] = relationship(
-        "UserModel", 
+        "UserModel",
         foreign_keys=[moderator_id],
         back_populates="reports_moderated"
     )

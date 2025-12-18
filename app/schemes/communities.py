@@ -24,3 +24,7 @@ class SCommunityGet(SCommunityBase):
     id: int
     posts_count: int
     members_count: int
+
+
+class SCommunityGetWithMembership(SCommunityGet):
+    is_joined: bool = False

@@ -6,6 +6,10 @@
     <title>Профиль пользователя - Мой Город</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Подключение шрифта Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Стили для карусели сообществ */
         .communities-carousel {
@@ -28,27 +32,29 @@
         .community-card-carousel {
             flex: 0 0 180px;
             background: #fff;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s ease;
             border: 1px solid #e0e0e0;
             text-decoration: none;
             color: inherit;
             display: block;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
         .community-card-carousel:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
             text-decoration: none;
+            border-color: #2e7d32;
         }
         
         .community-icon {
             width: 40px;
             height: 40px;
-            background: #4CAF50;
+            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -56,21 +62,24 @@
             margin-bottom: 10px;
             color: white;
             font-size: 18px;
+            box-shadow: 0 4px 8px rgba(46, 125, 50, 0.2);
         }
         
         .community-name {
             font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 5px;
-            color: #333;
+            font-size: 15px;
+            margin-bottom: 8px;
+            color: #1e293b;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
         .community-stats-small {
             font-size: 12px;
-            color: #666;
+            color: #64748b;
             display: flex;
             flex-direction: column;
             gap: 3px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
         .carousel-nav {
@@ -78,6 +87,7 @@
             justify-content: center;
             gap: 10px;
             margin-top: 15px;
+            align-items: center;
         }
         
         .carousel-btn {
@@ -91,23 +101,25 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
+            color: #2e7d32;
         }
         
         .carousel-btn:hover {
-            background: #f5f5f5;
-            border-color: #4CAF50;
+            background: #f8fafc;
+            border-color: #2e7d32;
+            transform: scale(1.05);
         }
         
         .carousel-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            color: #94a3b8;
         }
         
         .carousel-dots {
             display: flex;
             justify-content: center;
             gap: 6px;
-            margin-top: 10px;
         }
         
         .carousel-dot {
@@ -116,12 +128,271 @@
             border-radius: 50%;
             background: #ddd;
             cursor: pointer;
+            transition: all 0.2s;
         }
         
         .carousel-dot.active {
-            background: #4CAF50;
+            background: #2e7d32;
+            transform: scale(1.2);
         }
         
+        .carousel-dot:hover {
+            background: #94a3b8;
+        }
+
+        /* Общие стили для профиля */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #f0f9ff 100%);
+            min-height: 100vh;
+        }
+
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .profile-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 992px) {
+            .profile-layout {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+
+        /* Заголовки и тексты с правильным шрифтом */
+        h1, h2, h3, h4 {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 600;
+        }
+
+        .profile-header h1 {
+            font-size: 1.75rem;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-info p {
+            color: #64748b;
+            margin-bottom: 1rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 2rem;
+            margin: 1.5rem 0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2e7d32;
+            margin-bottom: 0.25rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .profile-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .meta-item {
+            font-size: 0.9rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .meta-item i {
+            color: #2e7d32;
+        }
+
+        /* Вкладки */
+        .profile-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.2s;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .tab-btn:hover {
+            background: #f8fafc;
+            color: #2e7d32;
+        }
+
+        .tab-btn.active {
+            background: #2e7d32;
+            color: white;
+        }
+
+        /* Содержимое вкладок */
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Посты */
+        .posts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .post-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .post-header {
+            margin-bottom: 1rem;
+        }
+
+        .post-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .post-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+            color: #64748b;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .post-body p {
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Сообщения о пустом состоянии */
+        .no-posts-message,
+        .no-comments-message,
+        .no-communities-message {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .no-posts-message i,
+        .no-comments-message i,
+        .no-communities-message i {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+
+        .no-posts-message h3,
+        .no-comments-message h3,
+        .no-communities-message h3 {
+            color: #475569;
+            margin-bottom: 0.5rem;
+        }
+
+        .no-posts-message p,
+        .no-comments-message p,
+        .no-communities-message p {
+            color: #94a3b8;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* Кнопки */
+        .btn {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Заголовок карусели */
+        .communities-carousel h3 {
+            font-size: 1.25rem;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .communities-carousel h3 i {
+            color: #2e7d32;
+        }
+
+        /* Стили для сообществ во вкладке */
+        #communities-tab .tab-pane {
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .communities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
         /* Адаптивность для карусели */
         @media (max-width: 768px) {
             .community-card-carousel {
@@ -131,6 +402,61 @@
             .carousel-track {
                 gap: 12px;
             }
+            
+            .carousel-nav {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .profile-stats {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+            
+            .profile-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .community-card-carousel {
+                flex: 0 0 140px;
+            }
+            
+            .profile-tabs {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        /* Спиннер загрузки */
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .loading-spinner:before {
+            content: "";
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #2e7d32;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -231,6 +557,7 @@
                         <div class="profile-tabs">
                             <button class="tab-btn active" data-tab="posts">Мои посты</button>
                             <button class="tab-btn" data-tab="comments">Мои комментарии</button>
+                            <button class="tab-btn" data-tab="favorites">Избранное</button>
                             <button class="tab-btn" data-tab="communities">Мои сообщества</button>
                         </div>
 
@@ -249,7 +576,6 @@
                                                             <i class="fas fa-comment"></i> {{ post.comments_count or 0 }}
                                                         </span>
                                                     </div>
-                                                </div>
                                                 <div class="post-body">
                                                     <p>{{ post.body[:200] }}{% if post.body|length > 200 %}...{% endif %}</p>
                                                 </div>
@@ -278,36 +604,40 @@
                                 </div>
                             </div>
                             
+                            <div id="favorites-tab" class="tab-pane">
+                                <div class="posts-list" id="favorites-list">
+                                    <div class="loading-spinner">Загрузка избранных постов...</div>
+                                </div>
+                            </div>
+                            
                             <div id="communities-tab" class="tab-pane">
-                                <div class="communities-list-full" id="user-communities-list-full">
-                                    <div class="loading-spinner">Загрузка сообществ...</div>
+                                <!-- Карусель сообществ теперь здесь -->
+                                <div class="communities-carousel">
+                                    <h3><i class="fas fa-users"></i> Сообщества, в которых вы состоите</h3>
+                                    <div class="carousel-container" id="carousel-container">
+                                        <div class="carousel-track" id="carousel-track">
+                                            <div class="loading-spinner">Загрузка сообществ...</div>
+                                        </div>
+                                        
+                                        <div class="carousel-nav">
+                                            <button class="carousel-btn" id="carousel-prev" disabled>
+                                                <i class="fas fa-chevron-left"></i>
+                                            </button>
+                                            <div class="carousel-dots" id="carousel-dots"></div>
+                                            <button class="carousel-btn" id="carousel-next">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Правая часть - карусель сообществ -->
+                <!-- Правая часть - пустая (убрали карусель отсюда) -->
                 <div class="profile-sidebar">
-                    <div class="communities-carousel">
-                        <h3><i class="fas fa-users"></i> Мои сообщества</h3>
-                        <div class="carousel-container" id="carousel-container">
-                            <div class="carousel-track" id="carousel-track">
-                                <!-- Сообщества будут загружены сюда -->
-                                <div class="loading-spinner">Загрузка...</div>
-                            </div>
-                            
-                            <div class="carousel-nav">
-                                <button class="carousel-btn" id="carousel-prev" disabled>
-                                    <i class="fas fa-chevron-left"></i>
-                                </button>
-                                <div class="carousel-dots" id="carousel-dots"></div>
-                                <button class="carousel-btn" id="carousel-next">
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Можно добавить другую информацию, например, статистику или последние активности -->
                 </div>
             </div>
         </div>
@@ -416,24 +746,19 @@
                     document.getElementById('comments-count').textContent = stats.comments_count || 0;
                     document.getElementById('likes-received').textContent = stats.likes_received || 0;
                     
-                    // Отображаем сообщества пользователя в карусели
+                    // Отображаем сообщества пользователя в карусели (теперь во вкладке)
                     if (userData.communities && userData.communities.length > 0) {
                         displayUserCommunitiesCarousel(userData.communities);
-                        displayUserCommunitiesFull(userData.communities); // Для вкладки "Мои сообщества"
                     } else {
                         document.getElementById('carousel-track').innerHTML = `
-                            <div class="no-communities-message">
-                                <i class="fas fa-users"></i>
-                                <p>Вы еще не состоите ни в одном сообществе</p>
-                            </div>
-                        `;
-                        document.getElementById('user-communities-list-full').innerHTML = `
                             <div class="no-communities-message">
                                 <i class="fas fa-users"></i>
                                 <h3>Нет сообществ</h3>
                                 <p>Вы еще не состоите ни в одном сообществе</p>
                             </div>
                         `;
+                        // Скрываем навигацию карусели
+                        document.querySelector('.carousel-nav').style.display = 'none';
                     }
                 } else {
                     // Если данные не были переданы, пробуем загрузить их с сервера
@@ -458,15 +783,15 @@
                     this.classList.add('active');
                     document.getElementById(`${tabId}-tab`).classList.add('active');
                     
-                    // Если переключаемся на вкладку "мои посты" и она пуста, загружаем посты
-                    if (tabId === 'posts' && !this.dataset.loaded) {
-                        loadUserPosts();
+                    // Если переключаемся на вкладку "мои сообщества" и карусель еще не загружена
+                    if (tabId === 'communities' && !this.dataset.loaded) {
+                        loadUserCommunities();
                         this.dataset.loaded = 'true';
                     }
                     
-                    // Если переключаемся на вкладку "мои сообщества" и она пуста, загружаем сообщества
-                    if (tabId === 'communities' && !this.dataset.loaded) {
-                        loadUserCommunities();
+                    // Если переключаемся на вкладку "избранное" и посты еще не загружены
+                    if (tabId === 'favorites' && !this.dataset.loaded) {
+                        loadFavoritePosts();
                         this.dataset.loaded = 'true';
                     }
                 });
@@ -478,12 +803,6 @@
             if (firstTabBtn && firstTabPane) {
                 firstTabBtn.classList.add('active');
                 firstTabPane.classList.add('active');
-                
-                // Загружаем посты при первой загрузке страницы
-                if (firstTabBtn && !firstTabBtn.dataset.loaded) {
-                    loadUserPosts();
-                    firstTabBtn.dataset.loaded = 'true';
-                }
             }
         });
 
@@ -526,46 +845,12 @@
                 carouselTrack.innerHTML = `
                     <div class="no-communities-message">
                         <i class="fas fa-users"></i>
-                        <p>Вы еще не состоите ни в одном сообществе</p>
-                    </div>
-                `;
-            }
-        }
-
-        // Функция для отображения сообществ в полном виде (для вкладки)
-        function displayUserCommunitiesFull(communities) {
-            const communitiesList = document.getElementById('user-communities-list-full');
-            
-            if (communities && communities.length > 0) {
-                let communitiesHtml = '<div class="communities-grid">';
-                
-                communities.forEach(community => {
-                    communitiesHtml += `
-                        <div class="community-card">
-                            <div class="community-header">
-                                <h3>${community.name}</h3>
-                            </div>
-                            <div class="community-stats">
-                                <span class="stat"><i class="fas fa-comment"></i> ${community.posts_count || 0} постов</span>
-                                <span class="stat"><i class="fas fa-user-friends"></i> ${community.members_count || 0} участников</span>
-                            </div>
-                            <div class="community-actions">
-                                <a href="/web/communities/${community.id}" class="btn btn-outline btn-sm">Перейти</a>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                communitiesHtml += '</div>';
-                communitiesList.innerHTML = communitiesHtml;
-            } else {
-                communitiesList.innerHTML = `
-                    <div class="no-communities-message">
-                        <i class="fas fa-users"></i>
                         <h3>Нет сообществ</h3>
                         <p>Вы еще не состоите ни в одном сообществе</p>
                     </div>
                 `;
+                // Скрываем навигацию карусели
+                document.querySelector('.carousel-nav').style.display = 'none';
             }
         }
 
@@ -670,38 +955,6 @@
             updateCarousel();
         }
 
-        // Остальные функции остаются без изменений...
-        // Функция для загрузки постов пользователя
-        async function loadUserPosts() {
-            try {
-                const response = await fetch('/posts?user_id=' + getUserIdFromTemplate(), {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const posts = await response.json();
-                    displayUserPosts(posts);
-                } else {
-                    console.error('Ошибка при загрузке постов:', response.status);
-                    showNotification('Ошибка при загрузке постов', 'error');
-                }
-            } catch (error) {
-                console.error('Ошибка при загрузке постов:', error);
-                showNotification('Ошибка соединения при загрузке постов', 'error');
-            }
-        }
-
-        // Функция для получения ID пользователя из шаблона
-        function getUserIdFromTemplate() {
-            const userDataElement = document.getElementById('user-data');
-            if (userDataElement) {
-                const userData = JSON.parse(userDataElement.textContent);
-                return userData.id;
-            }
-            return null;
-        }
-
         // Функция для загрузки сообществ пользователя
         async function loadUserCommunities() {
             try {
@@ -714,21 +967,16 @@
                     const userData = await response.json();
                     if (userData.communities && userData.communities.length > 0) {
                         displayUserCommunitiesCarousel(userData.communities);
-                        displayUserCommunitiesFull(userData.communities);
                     } else {
                         document.getElementById('carousel-track').innerHTML = `
-                            <div class="no-communities-message">
-                                <i class="fas fa-users"></i>
-                                <p>Вы еще не состоите ни в одном сообществе</p>
-                            </div>
-                        `;
-                        document.getElementById('user-communities-list-full').innerHTML = `
                             <div class="no-communities-message">
                                 <i class="fas fa-users"></i>
                                 <h3>Нет сообществ</h3>
                                 <p>Вы еще не состоите ни в одном сообществе</p>
                             </div>
                         `;
+                        // Скрываем навигацию карусели
+                        document.querySelector('.carousel-nav').style.display = 'none';
                     }
                 } else {
                     console.error('Ошибка при загрузке сообществ:', response.status);
@@ -782,21 +1030,16 @@
                     // Отображаем сообщества пользователя
                     if (userData.communities && userData.communities.length > 0) {
                         displayUserCommunitiesCarousel(userData.communities);
-                        displayUserCommunitiesFull(userData.communities);
                     } else {
                         document.getElementById('carousel-track').innerHTML = `
-                            <div class="no-communities-message">
-                                <i class="fas fa-users"></i>
-                                <p>Вы еще не состоите ни в одном сообществе</p>
-                            </div>
-                        `;
-                        document.getElementById('user-communities-list-full').innerHTML = `
                             <div class="no-communities-message">
                                 <i class="fas fa-users"></i>
                                 <h3>Нет сообществ</h3>
                                 <p>Вы еще не состоите ни в одном сообществе</p>
                             </div>
                         `;
+                        // Скрываем навигацию карусели
+                        document.querySelector('.carousel-nav').style.display = 'none';
                     }
                 } else {
                     // Если пользователь не авторизован, перенаправляем
@@ -806,6 +1049,78 @@
                 console.error('Ошибка загрузки профиля:', error);
                 // Показываем уведомление об ошибке
                 showNotification('Ошибка загрузки профиля', 'error');
+            }
+        }
+
+        // Функция для загрузки избранных постов
+        async function loadFavoritePosts() {
+            try {
+                const response = await fetch('/favorites/my', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const favoritesList = document.getElementById('favorites-list');
+                    
+                    if (data && data.length > 0) {
+                        let favoritesHtml = '';
+                        
+                        data.forEach(post => {
+                            favoritesHtml += `
+                                <div class="post-item">
+                                    <div class="post-header">
+                                        <div class="post-title">${post.header}</div>
+                                        <div class="post-meta">
+                                            <span class="post-date">${post.created_at ? new Date(post.created_at).toLocaleDateString('ru-RU') : 'Дата не указана'}</span>
+                                            <span class="post-stats">
+                                                <i class="fas fa-thumbs-up"></i> ${post.likes || 0}
+                                                <i class="fas fa-comment"></i> ${post.comments_count || 0}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="post-body">
+                                        <p>${post.body ? (post.body.length > 200 ? post.body.substring(0, 200) + '...' : post.body) : ''}</p>
+                                    </div>
+                                    <div class="post-footer">
+                                        <a href="/web/post/${post.id}" class="btn btn-outline btn-sm">Читать далее</a>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        favoritesList.innerHTML = favoritesHtml;
+                    } else {
+                        favoritesList.innerHTML = `
+                            <div class="no-posts-message">
+                                <i class="fas fa-star"></i>
+                                <h3>Нет избранных постов</h3>
+                                <p>Вы еще не добавили ни одного поста в избранное</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    console.error('Ошибка при загрузке избранных постов:', response.status);
+                    document.getElementById('favorites-list').innerHTML = `
+                        <div class="no-posts-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Ошибка загрузки</h3>
+                            <p>Не удалось загрузить избранные посты</p>
+                        </div>
+                    `;
+                    showNotification('Ошибка при загрузке избранных постов', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке избранных постов:', error);
+                document.getElementById('favorites-list').innerHTML = `
+                    <div class="no-posts-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Ошибка соединения</h3>
+                        <p>Не удалось загрузить избранные посты</p>
+                    </div>
+                `;
+                showNotification('Ошибка соединения при загрузке избранных постов', 'error');
             }
         }
 
