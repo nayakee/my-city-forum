@@ -300,6 +300,16 @@ function checkAuth() {
         const username = document.getElementById('username');
         if (username) username.textContent = user.name || 'Пользователь';
         
+        // Показываем/скрываем ссылку на админ-панель в зависимости от роли пользователя
+        const adminPanelLink = document.getElementById('admin-panel-link');
+        if (adminPanelLink) {
+            if (user.role && (user.role.level >= 2 || user.role.name === 'moderator' || user.role.name === 'admin')) {
+                adminPanelLink.style.display = 'inline-flex';
+            } else {
+                adminPanelLink.style.display = 'none';
+            }
+        }
+        
         // Обновляем аватар пользователя
         const userAvatar = document.getElementById('user-avatar');
         if (userAvatar) {
@@ -336,6 +346,12 @@ function checkAuth() {
         if (guestButtons) guestButtons.style.display = 'flex';
         if (userMenu) userMenu.style.display = 'none';
         
+        // Скрываем ссылку на админ-панель при выходе
+        const adminPanelLink = document.getElementById('admin-panel-link');
+        if (adminPanelLink) {
+            adminPanelLink.style.display = 'none';
+        }
+        
         const userAvatar = document.getElementById('user-avatar');
         if (userAvatar) {
             userAvatar.style.display = 'block';
@@ -344,6 +360,16 @@ function checkAuth() {
             if (initialsElement && initialsElement.classList.contains('user-initials')) {
                 initialsElement.remove();
             }
+        }
+    }
+    
+    // Показываем/скрываем ссылку на админ-панель в зависимости от роли пользователя
+    const adminPanelLink = document.getElementById('admin-panel-link');
+    if (adminPanelLink) {
+        if (user && user.role && (user.role.level >= 2 || user.role.name === 'moderator' || user.role.name === 'admin')) {
+            adminPanelLink.style.display = 'inline-flex';
+        } else {
+            adminPanelLink.style.display = 'none';
         }
     }
 }

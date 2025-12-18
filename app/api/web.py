@@ -1,15 +1,16 @@
+from typing import Annotated
 from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import os
 from pathlib import Path
-from app.api.dependencies import DBDep, get_current_user_id, get_db, get_token
+from app.api.dependencies import DBDep, get_current_user_id, get_db, get_token, ModeratorOrAdminDep
 from app.services.auth import AuthService
-from app.api.dependencies import DBDep
 from app.services.posts import PostService
 from app.database.db_manager import DBManager
 from app.exceptions.auth import JWTTokenExpiredHTTPError
 from app.services.stats import StatsService
+from app.models.users import UserModel
 
 router = APIRouter(prefix="/web", tags=["Фронтенд"])
 
@@ -128,8 +129,8 @@ async def community_detail_page(request: Request, community_id: int, db: 'DBDep'
 @router.get("/profile", response_class=HTMLResponse)
 async def profile_page(
     request: Request,
-    user_id: int = Depends(get_current_user_id),
-    db: DBManager = Depends(get_db)
+    db: DBDep,
+    user_id: int = Depends(get_current_user_id)
 ):
     try:
         # Получаем полные данные пользователя с ролями
@@ -182,3 +183,57 @@ async def profile_page(
     except JWTTokenExpiredHTTPError:
         # Перенаправляем на страницу авторизации при истечении токена
         return RedirectResponse(url="/web/auth")
+
+
+# Страница админ-панели (доступна только модераторам и администраторам)
+@router.get("/admin", response_class=HTMLResponse)
+async def admin_panel(
+    request: Request,
+    db: DBDep,
+    user_id: int = Depends(get_current_user_id)
+):
+    # Получаем пользователя с ролью и проверяем права
+    from app.services.users import UserService
+    from app.utils.roles import RoleLevel
+    
+    user_service = UserService(db)
+    current_user = await user_service.get_user_with_role(user_id=user_id)
+    
+    if not current_user or current_user.role.level < RoleLevel.MODERATOR:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=403,
+            detail="Недостаточно прав. Требуется уровень MODERATOR или ADMIN"
+        )
+    
+    # Получаем статистику для админ-панели
+    from app.services.stats import StatsService
+    from app.services.users import UserService
+    from app.services.posts import PostService
+    from app.services.reports import ReportService
+    
+    stats_service = StatsService(db)
+    user_service = UserService(db)  # переопределяем для статистики
+    post_service = PostService(db)
+    reports_service = ReportService(db)
+    
+    # Получаем общую статистику
+    forum_stats = await stats_service.get_forum_stats()
+    
+    # Получаем последних зарегистрированных пользователей
+    recent_users = await user_service.get_recent_users(limit=10)
+    
+    # Получаем последние посты
+    recent_posts = await post_service.get_recent_posts(limit=10)
+    
+    # Получаем открытые жалобы
+    open_reports = await reports_service.get_open_reports()
+    
+    return templates.TemplateResponse("admin_panel.html", {
+        "request": request,
+        "current_user": current_user,
+        "forum_stats": forum_stats,
+        "recent_users": recent_users,
+        "recent_posts": recent_posts,
+        "open_reports": open_reports
+    })

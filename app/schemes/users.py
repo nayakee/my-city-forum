@@ -95,6 +95,10 @@ class SUserPatch(BaseModel):
     hashed_password: str | None = None
     role_id: int | None = None
 
+# Специальная схема для обновления только роли пользователя
+class SUserRoleUpdate(BaseModel):
+    role_id: int
+
 
 # Extended user scheme with communities
 class SUserGetWithRelsAndCommunities(SUserGet):

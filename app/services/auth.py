@@ -77,8 +77,13 @@ class AuthService(BaseService):
         if not self.verify_password(user_data.password, user.hashed_password):
             raise InvalidPasswordError
             
+        # Проверяем, что пользователь не заблокирован (не имеет роль с level 0)
+        if user.role and user.role.level == 0:  # level 0 corresponds to blocked role
+            from app.exceptions.auth import InvalidTokenHTTPError
+            raise InvalidTokenHTTPError(detail="Ваш аккаунт заблокирован")
+            
         # Получаем имя роли, если роль существует
-        role_name = user.role.name if user.role else "user"  # по умолчанию "user"
+        role_name = user.role.name if user.role else "user" # по умолчанию "user"
         
         access_token: str = self.create_access_token(
             {
@@ -94,4 +99,10 @@ class AuthService(BaseService):
         )
         if not user:
             raise UserNotFoundError
+            
+        # Check if user is blocked (has role with level 0)
+        if user.role and user.role.level == 0:
+            from app.exceptions.auth import InvalidTokenHTTPError
+            raise InvalidTokenHTTPError(detail="Ваш аккаунт заблокирован")
+            
         return user

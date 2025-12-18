@@ -91,6 +91,12 @@ class PostsRepository(BaseRepository):
         result = await self.session.execute(query)
         return result.scalars().all()
 
+    async def get_recent_posts(self, limit: int = 10):
+        """Получить последние созданные посты"""
+        query = select(PostModel).order_by(desc(PostModel.id)).limit(limit)
+        result = await self.session.execute(query)
+        return result.scalars().all()
+
     async def get_popular(
         self, 
         days: int = 7,

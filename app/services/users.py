@@ -29,7 +29,7 @@ class UserService(BaseService):
         user: SUserGet | None = await self.db.users.get_one_or_none(id=user_id)
         if not user:
             raise UserNotFoundError
-        await self.db.users.edit(user_data, id=user_id)
+        await self.db.users.edit(user_data, exclude_unset=True, id=user_id)
         await self.db.commit()
         return
 
@@ -43,3 +43,12 @@ class UserService(BaseService):
 
     async def get_users(self):
         return await self.db.users.get_all()
+    
+    async def get_recent_users(self, limit: int = 10):
+        """Получить последние зарегистрированные пользователи"""
+        return await self.db.users.get_recent_users_with_role(limit=limit)
+    
+    async def get_role_by_name(self, role_name: str):
+        """Получить роль по имени"""
+        role = await self.db.roles.get_one_or_none(name=role_name)
+        return role

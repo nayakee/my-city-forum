@@ -24,6 +24,11 @@ class UserNotFoundError(MyAppError):
 class InvalidTokenHTTPError(MyAppHTTPError):
     status_code = 401
     detail = "Неверный токен доступа"
+    
+    def __init__(self, detail=None):
+        if detail is not None:
+            self.detail = detail
+        super().__init__()
 
 
 class JWTTokenExpiredHTTPError(MyAppHTTPError):
@@ -49,3 +54,8 @@ class UserNotFoundHTTPError(MyAppHTTPError):
 class InvalidPasswordHTTPError(MyAppHTTPError):
     status_code = 401
     detail = "Неверный пароль"
+
+
+class AuthFailedHTTPError(MyAppHTTPError):
+    status_code = 401
+    detail = "Аутентификация не удалась"

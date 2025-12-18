@@ -10,8 +10,38 @@ const API = {
 
 // Вспомогательная функция для проверки необходимости автоматического выхода
 function checkResponseForLogout(response) {
-    // Проверяем, содержит ли ответ флаг logout_required
-    if (response.headers.get('content-type')?.includes('application/json')) {
+    // Проверяем статус ответа и содержимое
+    if (response.status === 401) {
+        // Проверяем, содержит ли ответ JSON
+        if (response.headers.get('content-type')?.includes('application/json')) {
+            return response.clone().json().then(data => {
+                // Проверяем, является ли ошибка связанной с заблокированным аккаунтом
+                if (data.detail && data.detail.includes("Ваш аккаунт")) {
+                    alert(data.detail || "Ваш аккаунт заблокирован");
+                    window.location.href = '/';
+                    return true;
+                } else if (data.logout_required) {
+                    // Перенаправляем на страницу авторизации при истечении токена
+                    window.location.href = '/web/auth';
+                    return true;
+                } else {
+                    // Для других 401 ошибок также перенаправляем на авторизацию
+                    window.location.href = '/web/auth';
+                    return true;
+                }
+            }).catch(error => {
+                console.error('Ошибка при проверке ответа:', error);
+                // В случае ошибки парсинга тоже перенаправляем на авторизацию
+                window.location.href = '/web/auth';
+                return true;
+            });
+        } else {
+            // Если это 401 ошибка без JSON, перенаправляем на страницу авторизации
+            window.location.href = '/web/auth';
+            return true;
+        }
+    } else if (response.headers.get('content-type')?.includes('application/json')) {
+        // Проверяем обычные флаги в других ответах
         return response.clone().json().then(data => {
             if (data.logout_required) {
                 // Перенаправляем на страницу авторизации при истечении токена
@@ -178,7 +208,15 @@ async function handleLogin(e) {
         } else {
             // Извлекаем сообщение об ошибке
             let errorMessage = 'Ошибка авторизации';
-            if (data.detail) errorMessage = data.detail;
+            if (data.detail) {
+                errorMessage = data.detail;
+                // Если это сообщение о заблокированном аккаунте, показываем специальное уведомление
+                if (errorMessage.includes("Ваш аккаунт")) {
+                    alert(errorMessage);
+                    window.location.href = '/';
+                    return;
+                }
+            }
             else if (data.message) errorMessage = data.message;
             else if (typeof data === 'string') errorMessage = data;
             
@@ -288,7 +326,15 @@ async function handleRegister(e) {
         } else {
             // Извлекаем сообщение об ошибке
             let errorMessage = 'Ошибка регистрации';
-            if (data.detail) errorMessage = data.detail;
+            if (data.detail) {
+                errorMessage = data.detail;
+                // Если это сообщение о заблокированном аккаунте, показываем специальное уведомление
+                if (errorMessage.includes("Ваш аккаунт")) {
+                    alert(errorMessage);
+                    window.location.href = '/';
+                    return;
+                }
+            }
             else if (data.message) errorMessage = data.message;
             else if (data.error) errorMessage = data.error;
             else if (typeof data === 'string') errorMessage = data;

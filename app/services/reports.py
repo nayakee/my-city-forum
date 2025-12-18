@@ -274,3 +274,12 @@ class ReportService:
             "reports_on_posts": posts_count,
             "reports_on_comments": comments_count
         }
+
+    async def get_open_reports(self) -> list[dict]:
+        """Получение всех открытых (ожидающих рассмотрения) жалоб для админ-панели"""
+        reports = await self.db.reports.get_pending_reports()
+        detailed_reports = []
+        for report in reports:
+            detailed_report = await self._get_detailed_report_info(report)
+            detailed_reports.append(detailed_report)
+        return detailed_reports

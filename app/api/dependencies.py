@@ -50,6 +50,11 @@ async def get_current_user(user_id: int = Depends(get_current_user_id), db: DBMa
     user = await db.users.get(user_id)
     if not user:
         raise InvalidTokenHTTPError
+    
+    # Check if user is blocked (has role with level 0)
+    if user.role and user.role.level == 0:
+        raise InvalidTokenHTTPError(detail="Ваш аккаунт заблокирован")  # Using existing exception with custom message
+        
     return user
 
 
@@ -60,27 +65,54 @@ from app.models.users import UserModel
 from app.utils.roles import RoleLevel, check_permissions
 
 # Асинхронная функция для получения пользователя с ролью
-async def get_current_user_with_role(db: DBDep = Depends(get_db), user_id: int = Depends(get_current_user_id)) -> UserModel:
+async def get_current_user_with_role(db: DBDep, user_id: int = Depends(get_current_user_id)) -> UserModel:
     """Получение текущего пользователя с ролью из базы данных"""
-    from app.services.users import UserService
-    user_service = UserService(db)
-    user = await user_service.get_user_with_role(user_id=user_id)
-    if not user:
-        from app.exceptions.auth import AuthFailedHTTPError
-        raise AuthFailedHTTPError
-    # Возвращаем объект пользователя с ролью, полученный из UserService
-    # который уже включает информацию о роли
     from sqlalchemy.orm import selectinload
     from sqlalchemy import select
-    from app.models.users import UserModel
-    stmt = select(UserModel).options(selectinload(UserModel.role)).filter(UserModel.id == user.id)
+    
+    stmt = select(UserModel).options(selectinload(UserModel.role)).filter(UserModel.id == user_id)
     result = await db.session.execute(stmt)
     user_model = result.scalar_one_or_none()
+    
     if not user_model:
-        from app.exceptions.auth import AuthFailedHTTPError
-        raise AuthFailedHTTPError
+        from app.exceptions.auth import InvalidTokenHTTPError
+        raise InvalidTokenHTTPError
+    
+    # Check if user is blocked (has role with level 0)
+    if user_model.role and user_model.role.level == 0:
+        from app.exceptions.auth import InvalidTokenHTTPError
+        raise InvalidTokenHTTPError(detail="Ваш аккаунт заблокирован")  # Using existing exception with custom message
+    
     return user_model
 
+async def require_moderator_or_admin(db: DBDep, user_id: int = Depends(get_current_user_id)) -> UserModel:
+    """Проверка, что пользователь является модератором или администратором"""
+    # Получаем пользователя с ролью напрямую
+    from sqlalchemy.orm import selectinload
+    from sqlalchemy import select
+    
+    stmt = select(UserModel).options(selectinload(UserModel.role)).filter(UserModel.id == user_id)
+    result = await db.session.execute(stmt)
+    user_model = result.scalar_one_or_none()
+    
+    if not user_model:
+        from app.exceptions.auth import InvalidTokenHTTPError
+        raise InvalidTokenHTTPError
+    
+    # Check if user is blocked (has role with level 0)
+    if user_model.role and user_model.role.level == 0:
+        from app.exceptions.auth import InvalidTokenHTTPError
+        raise InvalidTokenHTTPError(detail="Ваш аккаунт заблокирован")  # Using existing exception with custom message
+    
+    # Проверяем, что пользователь и его роль существуют и уровень роли >= 2
+    if not user_model.role or user_model.role.level < 2:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=403,
+            detail=f"Недостаточно прав. Требуется уровень MODERATOR или ADMIN"
+        )
+    
+    return user_model
 # Функции-зависимости для проверки уровней доступа
 async def require_admin(current_user: UserModel = Depends(get_current_user_with_role)) -> UserModel:
     from app.utils.roles import RoleLevel, check_permissions
@@ -91,14 +123,25 @@ async def require_moderator(current_user: UserModel = Depends(get_current_user_w
     from app.utils.roles import RoleLevel, check_permissions
     permission_checker = check_permissions(RoleLevel.MODERATOR)
     return permission_checker(current_user)
-
 async def require_user(current_user: UserModel = Depends(get_current_user_with_role)) -> UserModel:
     from app.utils.roles import RoleLevel, check_permissions
     permission_checker = check_permissions(RoleLevel.USER)
     return permission_checker(current_user)
 
+async def require_moderator_or_admin(current_user: UserModel = Depends(get_current_user_with_role)) -> UserModel:
+    """Проверка, что пользователь является модератором или администратором"""
+    if current_user.role.level < RoleLevel.MODERATOR:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=403,
+            detail=f"Недостаточно прав. Требуется уровень MODERATOR или ADMIN"
+        )
+    return current_user
+
 # Определяем зависимости FastAPI
 AdminDep = Annotated[UserModel, Depends(require_admin)]
 ModeratorDep = Annotated[UserModel, Depends(require_moderator)]
 UserDepWithRole = Annotated[UserModel, Depends(require_user)]
+ModeratorOrAdminDep = Annotated[UserModel, Depends(require_moderator_or_admin)]
+
 

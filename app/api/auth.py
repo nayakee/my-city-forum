@@ -46,7 +46,7 @@ async def login_user(
         raise InvalidPasswordHTTPError
     except ValueError as e:
         # Обработка ошибок валидации
-        raise HTTPException(status_code=42, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e))
     response.set_cookie("access_token", access_token)
     return {"access_token": access_token}
 

@@ -46,3 +46,17 @@ class UsersRepository(BaseRepository):
 
         result = SUserGetWithRelsAndCommunities.model_validate(model, from_attributes=True)
         return result
+
+    async def get_recent_users(self, limit: int = 10):
+        """Получить последние зарегистрированные пользователи"""
+        query = select(self.model).order_by(self.model.id.desc()).limit(limit)
+        result = await self.session.execute(query)
+        models = result.scalars().all()
+        return [self.schema.model_validate(model, from_attributes=True) for model in models]
+    
+    async def get_recent_users_with_role(self, limit: int = 10):
+        """Получить последние зарегистрированные пользователи с ролями"""
+        query = select(self.model).options(selectinload(self.model.role)).order_by(self.model.id.desc()).limit(limit)
+        result = await self.session.execute(query)
+        models = result.scalars().all()
+        return [SUserGetWithRels.model_validate(model, from_attributes=True) for model in models]

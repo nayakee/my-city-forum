@@ -25,6 +25,7 @@ from app.api.themes import router as theme_router
 from app.api.simple_posts import router as simple_post_router
 from app.api.favorites import router as favorites_router
 from app.api.stats import router as stats_router
+from app.api.users import router as users_router
 
 from app.exceptions.auth import JWTTokenExpiredHTTPError
 
@@ -43,6 +44,7 @@ async def handle_expired_token(request, exc: JWTTokenExpiredHTTPError):
         }
     )
 
+
 app.mount("/static", StaticFiles(directory="app/static"), "static")
 
 app.include_router(sample_router)
@@ -56,6 +58,7 @@ app.include_router(theme_router)
 app.include_router(simple_post_router)
 app.include_router(favorites_router)
 app.include_router(stats_router)
+app.include_router(users_router)
 
 @app.get("/")
 async def root_redirect():
