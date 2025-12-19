@@ -887,6 +887,9 @@
                             <button class="post-menu-item" onclick="copyPostLink('{{ post.id }}')" data-action="copy-link" data-post-id="{{ post.id }}">
                                 <i class="fas fa-link"></i> Копировать ссылку
                             </button>
+                            <button class="post-menu-item" onclick="showComplaintModal('{{ post.id }}')" data-action="complaint" data-post-id="{{ post.id }}">
+                                <i class="fas fa-exclamation-triangle"></i> Пожаловаться
+                            </button>
                             <button class="post-menu-item delete" onclick="confirmDeletePost('{{ post.id }}')" data-action="delete" data-post-id="{{ post.id }}">
                                 <i class="fas fa-trash"></i> Удалить пост
                             </button>
@@ -1063,6 +1066,43 @@
                 </button>
                 <button class="btn" id="confirmDeleteBtn" style="background: #dc2626; color: white;">
                     Удалить
+                </button>
+            </div>
+        </div>
+    
+    <!-- Модальное окно для жалобы -->
+    <div class="modal-overlay" id="complaintModal">
+        <div class="modal">
+            <div class="modal-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Пожаловаться на пост</h3>
+            </div>
+            <div class="modal-body">
+                <form id="complaintForm">
+                    <input type="hidden" id="complaintPostId" name="postId">
+                    <div class="form-group">
+                        <label for="complaintReason" class="form-label">Причина жалобы</label>
+                        <select id="complaintReason" class="form-control" required>
+                            <option value="">Выберите причину</option>
+                            <option value="spam">Спам</option>
+                            <option value="inappropriate">Неприемлемый контент</option>
+                            <option value="offensive">Оскорбительный контент</option>
+                            <option value="misleading">Дезинформация</option>
+                            <option value="other">Другое</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="complaintDescription" class="form-label">Дополнительное описание (необязательно)</label>
+                        <textarea id="complaintDescription" class="form-control" rows="4" placeholder="Укажите подробности жалобы"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="cancelComplaintBtn">
+                    Отмена
+                </button>
+                <button class="btn btn-primary" id="submitComplaintBtn">
+                    Отправить жалобу
                 </button>
             </div>
         </div>

@@ -322,7 +322,7 @@ async def delete_post_v2(
     db: DBDep,
     current_user: int = Depends(get_current_user_id),
 ):
-    """Удаление поста текущим пользователем"""
+    """Удаление поста текущим пользователем или модератором/администратором"""
     try:
         # Находим пост
         post = await db.posts.get(post_id)
@@ -330,8 +330,23 @@ async def delete_post_v2(
         if not post:
             raise HTTPException(status_code=404, detail="Пост не найден")
 
-        # Проверяем, является ли текущий пользователь владельцем поста
-        if post.user_id != current_user:
+        # Получаем информацию о текущем пользователе с ролью
+        from sqlalchemy.orm import selectinload
+        from sqlalchemy import select
+        from app.models.users import UserModel
+        
+        stmt = select(UserModel).options(selectinload(UserModel.role)).filter(UserModel.id == current_user)
+        result = await db.session.execute(stmt)
+        current_user_info = result.scalar_one_or_none()
+        
+        if not current_user_info:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+        # Проверяем права: владелец поста или модератор/администратор
+        is_owner = post.user_id == current_user
+        is_moderator_or_admin = hasattr(current_user_info.role, 'level') and current_user_info.role.level >= 2  # предполагаем, что уровень >= 2 - это модератор или админ
+
+        if not (is_owner or is_moderator_or_admin):
             raise HTTPException(status_code=403, detail="Нет прав на удаление этого поста")
 
         # Удаляем пост

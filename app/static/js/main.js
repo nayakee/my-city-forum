@@ -269,21 +269,75 @@ function closeDeleteModal() {
     document.getElementById('confirmDeleteBtn').removeAttribute('data-post-id');
 }
 
-// Удаление поста (заглушка - только показывает окно подтверждения)
-function deletePost() {
+// Удаление поста (реализация через API)
+async function deletePost() {
     const postId = document.getElementById('confirmDeleteBtn').getAttribute('data-post-id');
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
     
-    // Здесь будет реальная логика удаления через API
-    console.log(`Удаление поста с ID: ${postId}`);
+    if (!postId) {
+        if (window.notify) {
+            window.notify.error('Ошибка: ID поста не найден');
+        }
+        closeDeleteModal();
+        return;
+    }
     
-    // Закрываем модальное окно
-    closeDeleteModal();
-    
-    // Используем глобальную систему уведомлений
-    if (window.notify) {
-        window.notify.success('Пост удален');
-    } else {
-        alert('Пост удален');
+    try {
+        // Показываем индикатор загрузки
+        const originalText = deleteBtn.textContent;
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Удаление...';
+        
+        // Выполняем запрос на удаление поста
+        const response = await fetchWithTokenCheck(`/api/v2/posts/${postId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        // Если токен истек, response будет null и пользователь уже вышел
+        if (!response) {
+            return; // Прерываем выполнение, так как пользователь уже вышел
+        }
+        
+        if (response.ok) {
+            // Удаляем элемент поста из DOM
+            const postElement = document.getElementById(`post-${postId}`);
+            if (postElement) {
+                postElement.remove();
+            }
+            
+            // Закрываем модальное окно
+            closeDeleteModal();
+            
+            // Обновляем статистику
+            updateThemeStatsOnce();
+            
+            // Используем глобальную систему уведомлений
+            if (window.notify) {
+                window.notify.success('Пост успешно удален');
+            } else {
+                alert('Пост успешно удален');
+            }
+        } else {
+            const errorData = await response.json().catch(() => ({ detail: 'Ошибка сервера' }));
+            throw new Error(errorData.detail || `Ошибка сервера: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Ошибка при удалении поста:', error);
+        
+        // Используем глобальную систему уведомлений
+        if (window.notify) {
+            window.notify.error(`Ошибка при удалении поста: ${error.message}`);
+        } else {
+            alert(`Ошибка при удалении поста: ${error.message}`);
+        }
+    } finally {
+        // Восстанавливаем состояние кнопки
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'Удалить';
     }
 }
 
@@ -527,8 +581,30 @@ function initPageFunctionality() {
     }
     
     // 7. Обработка кнопок модального окна
-    document.getElementById('cancelDeleteBtn')?.addEventListener('click', closeDeleteModal);
-    document.getElementById('confirmDeleteBtn')?.addEventListener('click', deletePost);
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+    }
+    
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', deletePost);
+        console.log('Обработчик удаления поста добавлен');
+    } else {
+        console.error('Кнопка подтверждения удаления не найдена');
+    }
+    
+    // 8. Обработка кнопок модального окна жалобы
+    document.getElementById('cancelComplaintBtn')?.addEventListener('click', closeComplaintModal);
+    document.getElementById('submitComplaintBtn')?.addEventListener('click', submitComplaint);
+    
+    // Закрытие модального окна жалобы при клике на фон
+    document.getElementById('complaintModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeComplaintModal();
+        }
+    });
 }
 
 // Фильтрация постов по теме
@@ -904,7 +980,8 @@ function formatDate(dateString) {
 
 // НОВАЯ ЛОГИКА ГОЛОСОВАНИЯ
 function initVoteButtons() {
-    document.querySelectorAll('.vote-btn').forEach(btn => {
+    // Выбираем только кнопки голосования постов, исключая кнопки комментариев
+    document.querySelectorAll('.post-actions .vote-btn').forEach(btn => {
         btn.addEventListener('click', async function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -990,8 +1067,8 @@ function initVoteButtons() {
                             AppState.userReactions[postId] = result.user_reaction;
                             
                             // Обновляем счетчики голосов для обоих кнопок
-                            const likeBtn = document.querySelector(`.vote-btn.like[data-post-id="${postId}"]`);
-                            const dislikeBtn = document.querySelector(`.vote-btn.dislike[data-post-id="${postId}"]`);
+                            const likeBtn = document.querySelector(`.post-actions .vote-btn.like[data-post-id="${postId}"]`);
+                            const dislikeBtn = document.querySelector(`.post-actions .vote-btn.dislike[data-post-id="${postId}"]`);
                             
                             if (likeBtn && result.likes !== undefined) {
                                 const likeCountSpan = likeBtn.querySelector('.vote-count');
@@ -1093,6 +1170,22 @@ function updateThemeStatsOnce() {
     if (jobCount) jobCount.textContent = `${counts['работа']} постов`;
 }
 
+// Helper function to get cookie value
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 // Функция для автоматического выхода при истечении токена
 function handleAutoLogout() {
     // Удаляем пользователя из localStorage
@@ -1132,6 +1225,218 @@ function handleLogout(e) {
     setTimeout(() => {
         window.location.reload();
     }, 1000);
+}
+
+// Helper function to get cookie value
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Функция для отображения модального окна жалобы
+function showComplaintModal(postId) {
+    // Закрываем меню
+    const menu = document.getElementById(`menu-${postId}`);
+    if (menu) {
+        menu.classList.remove('show');
+    }
+    
+    // Устанавливаем ID поста в форму
+    document.getElementById('complaintPostId').value = postId;
+    
+    // Сбрасываем форму
+    document.getElementById('complaintReason').value = '';
+    document.getElementById('complaintDescription').value = '';
+    
+    // Показываем модальное окно
+    document.getElementById('complaintModal').classList.add('show');
+}
+
+// Закрытие модального окна жалобы
+function closeComplaintModal() {
+    document.getElementById('complaintModal').classList.remove('show');
+}
+
+// Отправка жалобы
+async function submitComplaint() {
+    const postId = document.getElementById('complaintPostId').value;
+    const reason = document.getElementById('complaintReason').value;
+    const description = document.getElementById('complaintDescription').value;
+    const submitBtn = document.getElementById('submitComplaintBtn');
+    
+    if (!reason) {
+        if (window.notify) {
+            window.notify.error('Пожалуйста, выберите причину жалобы');
+        } else {
+            alert('Пожалуйста, выберите причину жалобы');
+        }
+        return;
+    }
+    
+    // Проверяем, авторизован ли пользователь
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        if (window.notify) {
+            window.notify.warning('Для отправки жалобы необходимо авторизоваться');
+        } else {
+            alert('Для отправки жалобы необходимо авторизоваться');
+        }
+        window.location.href = '/web/auth';
+        return;
+    }
+    
+    try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Отправка...';
+        
+        // Map the form reason to a more descriptive reason that meets min length requirement
+        let detailedReason = reason;
+        switch(reason) {
+            case 'spam':
+                detailedReason = 'Спам - нежелательный рекламный контент';
+                break;
+            case 'inappropriate':
+                detailedReason = 'Неприемлемый контент - оскорбления или ненормативная лексика';
+                break;
+            case 'offensive':
+                detailedReason = 'Оскорбительный контент - дискриминация или угрозы';
+                break;
+            case 'misleading':
+                detailedReason = 'Дезинформация - ложные или вводящие в заблуждение сведения';
+                break;
+            case 'other':
+                if (description && description.trim().length > 0) {
+                    // Use the description as the reason if it's provided and meets length requirements
+                    const trimmedDescription = description.trim();
+                    if (trimmedDescription.length >= 5) {
+                        detailedReason = trimmedDescription.substring(0, 500);
+                    } else {
+                        // If description is less than 5 chars, append additional text to meet min length
+                        detailedReason = trimmedDescription + ' (дополнительно)';
+                    }
+                } else {
+                    // If no description provided for 'other', show an error to the user
+                    if (window.notify) {
+                        window.notify.error('Для причины "Другое" необходимо указать описание');
+                    } else {
+                        alert('Для причины "Другое" необходимо указать описание');
+                    }
+                    return; // Exit without submitting
+                }
+                break;
+        }
+        
+        // Ensure content_id is a proper integer
+        const contentId = parseInt(postId, 10);
+        
+        // Validate that contentId is a positive integer
+        if (isNaN(contentId) || contentId <= 0) {
+            if (window.notify) {
+                window.notify.error('Некорректный ID поста');
+            } else {
+                alert('Некорректный ID поста');
+            }
+            return;
+        }
+        
+        // Debug: Log the data being sent
+        console.log('Sending complaint data:', {
+            content_type: 'post',
+            content_id: contentId,
+            reason: detailedReason,
+            description: description || null
+        });
+        
+        // Prepare the request body
+        const requestBody = {
+            content_type: 'post',
+            content_id: contentId,
+            reason: detailedReason,
+            description: description || null
+        };
+        
+        // Debug: Check the request body
+        console.log('Request body:', JSON.stringify(requestBody));
+        
+        // Check if token exists in localStorage
+        const token = localStorage.getItem('token');
+        if (!token) {
+            // Try to get token from cookies as fallback
+            const cookieToken = getCookie('access_token');
+            if (!cookieToken) {
+                if (window.notify) {
+                    window.notify.error('Токен аутентификации отсутствует');
+                } else {
+                    alert('Токен аутентификации отсутствует');
+                }
+                return;
+            }
+        }
+        
+        const response = await fetchWithTokenCheck('/reports', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token || getCookie('access_token')}`
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        // Если токен истек, response будет null и пользователь уже вышел
+        if (!response) {
+            return; // Прерываем выполнение, так как пользователь уже вышел
+        }
+        
+        if (response.ok) {
+            // Закрываем модальное окно
+            closeComplaintModal();
+            
+            // Показываем уведомление об успехе
+            if (window.notify) {
+                window.notify.success('Жалоба успешно отправлена');
+            } else {
+                alert('Жалоба успешно отправлена');
+            }
+        } else {
+            // Get the error details
+            let error;
+            try {
+                error = await response.json();
+                console.error('Server error response:', error);
+            } catch (e) {
+                // If response is not JSON, get text
+                const errorText = await response.text();
+                console.error('Server error response (text):', errorText);
+                error = { detail: errorText };
+            }
+            
+            if (window.notify) {
+                window.notify.error(`Ошибка при отправке жалобы: ${JSON.stringify(error)}`);
+            } else {
+                alert(`Ошибка при отправке жалобы: ${JSON.stringify(error)}`);
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка при отправке жалобы:', error);
+        if (window.notify) {
+            window.notify.error('Ошибка при отправке жалобы');
+        } else {
+            alert('Ошибка при отправке жалобы');
+        }
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Отправить жалобу';
+    }
 }
 
 // Функция для комментариев

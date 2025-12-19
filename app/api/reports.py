@@ -47,7 +47,7 @@ async def get_my_reports(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     status: Optional[ReportStatus] = None,
-    current_user = Depends(UserDepWithRole),
+    current_user: dict = Depends(UserDepWithRole),
 ) -> List[SReportGet]:
     reports = await ReportService(db).get_reports_with_details(
         skip=skip,
@@ -66,7 +66,7 @@ async def get_all_reports(
     limit: int = Query(100, ge=1, le=1000),
     status: Optional[ReportStatus] = None,
     content_type: Optional[str] = Query(None, regex="^(post|comment)$"),
-    current_user = Depends(UserDepWithRole),
+    current_user: dict = Depends(UserDepWithRole),
 ) -> List[SReportGet]:
     # Проверяем права доступа (только модераторы/админы)
     is_moderator = current_user.role.level >= 2  # Модератор или выше
@@ -88,7 +88,7 @@ async def get_all_reports(
 async def get_report(
     db: DBDep,
     report_id: int = Path(..., description="ID жалобы"),
-    current_user = Depends(UserDepWithRole),
+    current_user: dict = Depends(UserDepWithRole),
 ) -> SReportGet:
     report = await ReportService(db).get_report_with_details(report_id)
     if not report:
@@ -107,7 +107,7 @@ async def update_report(
     report_data: SReportUpdate,
     db: DBDep,
     report_id: int = Path(..., description="ID жалобы"),
-    current_user = Depends(UserDepWithRole),
+    current_user: dict = Depends(UserDepWithRole),
 ) -> dict[str, str]:
     # Проверяем права доступа
     is_moderator = current_user.role.level >= 2  # Модератор или выше
@@ -129,7 +129,7 @@ async def update_report(
 async def delete_report(
     db: DBDep,
     report_id: int = Path(..., description="ID жалобы"),
-    current_user = Depends(UserDepWithRole),
+    current_user: dict = Depends(UserDepWithRole),
 ) -> dict[str, str]:
     try:
         is_admin = current_user.role.level >= 3  # Администратор
@@ -145,7 +145,7 @@ async def delete_report(
 @router.get("/stats/summary", summary="Статистика жалоб (только модераторы)")
 async def get_reports_stats(
     db: DBDep,
-    current_user = Depends(UserDepWithRole),
+    current_user: dict = Depends(UserDepWithRole),
 ) -> SReportStats:
     # Проверяем права доступа
     is_moderator = current_user.role.level >= 2  # Модератор или выше
@@ -166,7 +166,7 @@ async def get_reports_for_content(
     content_id: int = Path(..., description="ID контента"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user = Depends(UserDepWithRole),
+    current_user: dict = Depends(UserDepWithRole),
 ) -> List[SReportGet]:
     # Проверяем права доступа (только модераторы/админы или автор контента)
     is_moderator = current_user.role.level >= 2  # Модератор или выше

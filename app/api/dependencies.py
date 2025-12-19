@@ -123,6 +123,7 @@ async def require_moderator(current_user: UserModel = Depends(get_current_user_w
     from app.utils.roles import RoleLevel, check_permissions
     permission_checker = check_permissions(RoleLevel.MODERATOR)
     return permission_checker(current_user)
+# Function to check if user has at least USER level permissions
 async def require_user(current_user: UserModel = Depends(get_current_user_with_role)) -> UserModel:
     from app.utils.roles import RoleLevel, check_permissions
     permission_checker = check_permissions(RoleLevel.USER)

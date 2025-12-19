@@ -20,7 +20,7 @@ router = APIRouter(prefix="/comments", tags=["Комментарии"])
 async def create_comment(
     comment_data: SCommentAdd,
     db: DBDep,
-    current_user = Depends(UserDepWithRole),
+    current_user: UserDepWithRole,
 ) -> dict[str, str]:
     try:
         await CommentService(db).create_comment(comment_data, current_user.id)
@@ -33,9 +33,9 @@ async def create_comment(
 @router.get("", summary="Получение всех комментариев пользователя")
 async def get_user_comments(
     db: DBDep,
+    current_user: UserDepWithRole,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user = Depends(UserDepWithRole),
 ) -> list[SCommentGet]:
     comments = await CommentService(db).get_comments_by_user(
         user_id=current_user.id,
@@ -100,7 +100,7 @@ async def update_comment(
     comment_data: SCommentUpdate,
     db: DBDep,
     comment_id: int,
-    current_user = Depends(UserDepWithRole),
+    current_user: UserDepWithRole,
 ) -> dict[str, str]:
     try:
         # Проверяем, является ли пользователь администратором
@@ -123,7 +123,7 @@ async def update_comment(
 async def delete_comment(
     db: DBDep,
     comment_id: int,
-    current_user = Depends(UserDepWithRole),
+    current_user: UserDepWithRole,
 ) -> dict[str, str]:
     try:
         # Проверяем, является ли пользователь администратором
@@ -145,26 +145,20 @@ async def delete_comment(
 async def like_comment(
     db: DBDep,
     comment_id: int,
+    current_user: UserDepWithRole,
 ) -> dict[str, str]:
-    comment = await CommentService(db).get_comment(comment_id)
-    if not comment:
-        raise CommentNotFoundHTTPError
-    
-    await CommentService(db).like_comment(comment_id)
-    return {"status": "OK", "message": "Лайк добавлен"}
+    result = await CommentService(db).like_comment(comment_id, current_user.id)
+    return {"status": "OK", "message": result["message"]}
 
 
 @router.post("/{comment_id}/dislike", summary="Дизлайк комментария")
 async def dislike_comment(
     db: DBDep,
     comment_id: int,
+    current_user: UserDepWithRole,
 ) -> dict[str, str]:
-    comment = await CommentService(db).get_comment(comment_id)
-    if not comment:
-        raise CommentNotFoundHTTPError
-    
-    await CommentService(db).dislike_comment(comment_id)
-    return {"status": "OK", "message": "Дизлайк добавлен"}
+    result = await CommentService(db).dislike_comment(comment_id, current_user.id)
+    return {"status": "OK", "message": result["message"]}
 
 
 @router.get("/post/{post_id}/count", summary="Получение количества комментариев к посту")

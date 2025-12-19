@@ -128,19 +128,90 @@ class CommentService:
         
         await self.db.comments.delete(id=comment_id)
 
-    async def like_comment(self, comment_id: int) -> None:
-        """Добавление лайка комментарию"""
-        comment = await self.db.comments.get(comment_id)
-        if comment:
-            update_data = {"likes": (comment.likes or 0) + 1}
-            await self.db.comments.edit(update_data, id=comment_id)
+    async def like_comment(self, comment_id: int, user_id: int) -> dict:
+        """Добавление лайка комментарию пользователем"""
+        # Получаем ORM модель комментария напрямую из сессии
+        from sqlalchemy import select
+        stmt = select(CommentModel).where(CommentModel.id == comment_id)
+        result = await self.db.session.execute(stmt)
+        comment = result.scalar_one_or_none()
+        
+        if not comment:
+            raise CommentNotFoundError
+        
+        current_reaction = comment.get_user_reaction(user_id)
+        
+        if current_reaction is None:
+            # Нет реакции - добавляем лайк
+            comment.add_like(user_id)
+            action = "added"
+        elif current_reaction == 'like':
+            # Уже лайк - убираем лайк
+            comment.remove_like(user_id)
+            action = "removed"
+        else:
+            # Был дизлайк - меняем на лайк
+            comment.remove_dislike(user_id)
+            comment.add_like(user_id)
+            action = "changed"
+        
+        # Сохраняем изменения
+        await self.db.session.commit()
+        
+        return {
+            "action": action,
+            "likes": comment.likes or 0,
+            "dislikes": comment.dislikes or 0,
+            "user_reaction": comment.get_user_reaction(user_id),
+            "message": self._get_reaction_message(action, "лайк")
+        }
 
-    async def dislike_comment(self, comment_id: int) -> None:
-        """Добавление дизлайка комментарию"""
-        comment = await self.db.comments.get(comment_id)
-        if comment:
-            update_data = {"dislikes": (comment.dislikes or 0) + 1}
-            await self.db.comments.edit(update_data, id=comment_id)
+    async def dislike_comment(self, comment_id: int, user_id: int) -> dict:
+        """Добавление дизлайка комментарию пользователем"""
+        # Получаем ORM модель комментария напрямую из сессии
+        from sqlalchemy import select
+        stmt = select(CommentModel).where(CommentModel.id == comment_id)
+        result = await self.db.session.execute(stmt)
+        comment = result.scalar_one_or_none()
+        
+        if not comment:
+            raise CommentNotFoundError
+        
+        current_reaction = comment.get_user_reaction(user_id)
+        
+        if current_reaction is None:
+            # Нет реакции - добавляем дизлайк
+            comment.add_dislike(user_id)
+            action = "added"
+        elif current_reaction == 'dislike':
+            # Уже дизлайк - убираем дизлайк
+            comment.remove_dislike(user_id)
+            action = "removed"
+        else:
+            # Был лайк - меняем на дизлайк
+            comment.remove_like(user_id)
+            comment.add_dislike(user_id)
+            action = "changed"
+        
+        # Сохраняем изменения
+        await self.db.session.commit()
+        
+        return {
+            "action": action,
+            "likes": comment.likes or 0,
+            "dislikes": comment.dislikes or 0,
+            "user_reaction": comment.get_user_reaction(user_id),
+            "message": self._get_reaction_message(action, "дизлайк")
+        }
+    
+    def _get_reaction_message(self, action: str, reaction_type: str) -> str:
+        """Возвращает сообщение о реакции в зависимости от действия"""
+        if action == "added":
+            return f"{reaction_type.capitalize()} добавлен"
+        elif action == "removed":
+            return f"{reaction_type.capitalize()} убран"
+        else:
+            return f"{reaction_type.capitalize()} изменен"
 
     async def get_comments_count_by_post(self, post_id: int) -> int:
         """Получение количества комментариев к посту"""

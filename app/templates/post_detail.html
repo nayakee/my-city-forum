@@ -712,6 +712,9 @@
                             <button class="post-menu-item" onclick="copyPostLink('{{ post.id }}')" data-action="copy-link" data-post-id="{{ post.id }}">
                                 <i class="fas fa-link"></i> Копировать ссылку
                             </button>
+                            <button class="post-menu-item" onclick="showComplaintModal('{{ post.id }}')" data-action="complaint" data-post-id="{{ post.id }}">
+                                <i class="fas fa-exclamation-triangle"></i> Пожаловаться
+                            </button>
                             <button class="post-menu-item delete" onclick="confirmDeletePost('{{ post.id }}')" data-action="delete" data-post-id="{{ post.id }}">
                                 <i class="fas fa-trash"></i> Удалить пост
                             </button>
@@ -885,6 +888,44 @@
             </div>
         </div>
     </div>
+    
+    <!-- Модальное окно для жалобы -->
+    <div class="modal-overlay" id="complaintModal">
+        <div class="modal">
+            <div class="modal-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Пожаловаться на пост</h3>
+            </div>
+            <div class="modal-body">
+                <form id="complaintForm">
+                    <input type="hidden" id="complaintPostId" name="postId">
+                    <div class="form-group">
+                        <label for="complaintReason" class="form-label">Причина жалобы</label>
+                        <select id="complaintReason" class="form-control" required>
+                            <option value="">Выберите причину</option>
+                            <option value="spam">Спам</option>
+                            <option value="inappropriate">Неприемлемый контент</option>
+                            <option value="offensive">Оскорбительный контент</option>
+                            <option value="misleading">Дезинформация</option>
+                            <option value="other">Другое</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="complaintDescription" class="form-label">Дополнительное описание (необязательно)</label>
+                        <textarea id="complaintDescription" class="form-control" rows="4" placeholder="Укажите подробности жалобы"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="cancelComplaintBtn">
+                    Отмена
+                </button>
+                <button class="btn btn-primary" id="submitComplaintBtn">
+                    Отправить жалобу
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Подключаем скрипты -->
     <script src="/static/js/notifications.js"></script>
@@ -906,8 +947,24 @@
             const content = document.getElementById('comment-content').value;
             const postId = document.getElementById('comment-post-id').value;
             
+            // Функция для получения токена из куки
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
             // Проверяем, авторизован ли пользователь
-            const token = localStorage.getItem('token');
+            const token = getCookie('access_token');
             if (!token) {
                 document.getElementById('guest-notice').style.display = 'block';
                 return;
@@ -917,7 +974,7 @@
                 document.getElementById('comment-loading-indicator').style.display = 'block';
                 document.getElementById('submit-comment-btn').disabled = true;
                 
-                const response = await fetch(`/api/comments`, {
+                const response = await fetch(`/comments`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -950,10 +1007,26 @@
         document.addEventListener('DOMContentLoaded', function() {
             const favoriteButtons = document.querySelectorAll('.vote-btn.favorite');
             
+            // Функция для получения токена из куки
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
             favoriteButtons.forEach(button => {
                 button.addEventListener('click', async function() {
                     const postId = this.getAttribute('data-post-id');
-                    const token = localStorage.getItem('token');
+                    const token = getCookie('access_token');
                     
                     if (!token) {
                         // Если пользователь не авторизован, перенаправляем на страницу входа
@@ -962,7 +1035,7 @@
                     }
                     
                     try {
-                        const response = await fetch('/api/favorites/toggle', {
+                        const response = await fetch('/favorites/toggle', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -989,6 +1062,172 @@
                         }
                     } catch (error) {
                         showNotification('Ошибка при изменении избранного', 'error');
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <script>
+        // Обработка лайков и дизлайков комментариев
+        document.addEventListener('DOMContentLoaded', function() {
+            const commentLikeButtons = document.querySelectorAll('.comment-actions .vote-btn.like');
+            const commentDislikeButtons = document.querySelectorAll('.comment-actions .vote-btn.dislike');
+            
+            // Функция для получения токена из куки
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
+            // Обработчик для лайков комментариев
+            commentLikeButtons.forEach(button => {
+                button.addEventListener('click', async function() {
+                    const commentId = this.getAttribute('data-comment-id');
+                    const token = getCookie('access_token');
+                    
+                    if (!token) {
+                        // Если пользователь не авторизован, перенаправляем на страницу входа
+                        window.location.href = '/web/auth';
+                        return;
+                    }
+                    
+                    // Находим родительский элемент с классом comment-actions для текущего комментария
+                    const commentActionsContainer = this.closest('.comment-actions');
+                    if (!commentActionsContainer) {
+                        console.error('Не найден контейнер действий комментария');
+                        return;
+                    }
+                    
+                    // Находим кнопку дизлайка и элементы счетчиков в этом же контейнере
+                    const dislikeBtn = commentActionsContainer.querySelector('.vote-btn.dislike');
+                    const likeCountElement = this.querySelector('.vote-count');
+                    const dislikeCountElement = dislikeBtn ? dislikeBtn.querySelector('.vote-count') : null;
+                    
+                    try {
+                        const response = await fetch(`/comments/${commentId}/like`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            // Обновляем счетчики лайков и дизлайков
+                            if (likeCountElement) {
+                                likeCountElement.textContent = result.likes || 0;
+                            }
+                            if (dislikeCountElement) {
+                                dislikeCountElement.textContent = result.dislikes || 0;
+                            }
+                            // Обновляем активные классы
+                            if (result.user_reaction === 'like') {
+                                this.classList.add('active-like');
+                                if (dislikeBtn) {
+                                    dislikeBtn.classList.remove('active-dislike');
+                                }
+                            } else {
+                                this.classList.remove('active-like');
+                            }
+                            
+                            // Показываем уведомление
+                            if (window.notify) {
+                                window.notify.success(result.message);
+                            }
+                        } else {
+                            const error = await response.json();
+                            if (window.notify) {
+                                window.notify.error(error.detail || 'Ошибка при лайке комментария');
+                            }
+                        }
+                    } catch (error) {
+                        if (window.notify) {
+                            window.notify.error('Ошибка при лайке комментария');
+                        }
+                        console.error('Ошибка при лайке комментария:', error);
+                    }
+                });
+            });
+            
+            // Обработчик для дизлайков комментариев
+            commentDislikeButtons.forEach(button => {
+                button.addEventListener('click', async function() {
+                    const commentId = this.getAttribute('data-comment-id');
+                    const token = getCookie('access_token');
+                    
+                    if (!token) {
+                        // Если пользователь не авторизован, перенаправляем на страницу входа
+                        window.location.href = '/web/auth';
+                        return;
+                    }
+                    
+                    // Находим родительский элемент с классом comment-actions для текущего комментария
+                    const commentActionsContainer = this.closest('.comment-actions');
+                    if (!commentActionsContainer) {
+                        console.error('Не найден контейнер действий комментария');
+                        return;
+                    }
+                    
+                    // Находим кнопку лайка и элементы счетчиков в этом же контейнере
+                    const likeBtn = commentActionsContainer.querySelector('.vote-btn.like');
+                    const dislikeCountElement = this.querySelector('.vote-count');
+                    const likeCountElement = likeBtn ? likeBtn.querySelector('.vote-count') : null;
+                    
+                    try {
+                        const response = await fetch(`/comments/${commentId}/dislike`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            // Обновляем счетчики лайков и дизлайков
+                            if (dislikeCountElement) {
+                                dislikeCountElement.textContent = result.dislikes || 0;
+                            }
+                            if (likeCountElement) {
+                                likeCountElement.textContent = result.likes || 0;
+                            }
+                            // Обновляем активные классы
+                            if (result.user_reaction === 'dislike') {
+                                this.classList.add('active-dislike');
+                                if (likeBtn) {
+                                    likeBtn.classList.remove('active-like');
+                                }
+                            } else {
+                                this.classList.remove('active-dislike');
+                            }
+                            
+                            // Показываем уведомление
+                            if (window.notify) {
+                                window.notify.success(result.message);
+                            }
+                        } else {
+                            const error = await response.json();
+                            if (window.notify) {
+                                window.notify.error(error.detail || 'Ошибка при дизлайке комментария');
+                            }
+                        }
+                    } catch (error) {
+                        if (window.notify) {
+                            window.notify.error('Ошибка при дизлайке комментария');
+                        }
+                        console.error('Ошибка при дизлайке комментария:', error);
                     }
                 });
             });

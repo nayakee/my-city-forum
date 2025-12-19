@@ -37,6 +37,7 @@ class DBManager:
         self.roles = RolesRepository(self.session)
         self.posts = PostsRepository(self.session)
         self.comments = CommentsRepository(self.session)
+        self.post_reactions = None  # Initialize to None if it doesn't exist
         self.communities = CommunitiesRepository(self.session)
         self.reports = ReportsRepository(self.session)
         self.themes = ThemesRepository(self.session)

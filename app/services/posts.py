@@ -297,10 +297,15 @@ class PostService:
             theme = await self.db.themes.get(post.theme_id)
             community = await self.db.communities.get(post.community_id) if post.community_id else None
             
+            # Получаем количество комментариев к посту
+            comments = await self.db.comments.get_filtered(post_id=post.id)
+            comments_count = len(comments)
+            
             post_dict = post.__dict__.copy()
             post_dict["user_name"] = user.name if user else "Unknown"
             post_dict["theme_name"] = theme.name if theme else "Unknown"
             post_dict["community_name"] = community.name if community else "Unknown"
+            post_dict["comments_count"] = comments_count
             result.append(post_dict)
             
         return result
